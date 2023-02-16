@@ -3,74 +3,65 @@ package database
 import (
 	"database/sql"
 	"github.com/AubreeH/goApiDb/helpers"
-	"log"
-	"os"
 	"reflect"
-	"time"
 )
 
-var db *sql.DB
-var tableColumns map[string][]string
-
-func SetupDatabase() *sql.DB {
-	if db != nil {
-		return db
-	}
-
-	for true {
-		connectionString := getConnectionString()
-
-		var err error
-		db, err = sql.Open("mysql", connectionString)
-
-		if err != nil {
-			log.Print("Error whilst opening connection to db", err)
-			time.Sleep(2 * time.Second)
-			continue
-		}
-
-		err = db.Ping()
-		if err != nil {
-			log.Print("Error whilst pinging connection to db", err)
-			time.Sleep(2 * time.Second)
-			continue
-		}
-
-		break
-	}
-
-	SetupTableVariables()
-
-	return db
+type DatabaseConfig struct {
+	Host     string
+	Port     string
+	Name     string
+	User     string
+	Password string
 }
 
-func GetDb() *sql.DB {
-	return db
+type Database struct {
+	Db           *sql.DB
+	tableColumns map[string][]string
 }
 
-func getConnectionString() string {
-	host := os.Getenv("DB_HOST")
-	port := os.Getenv("DB_PORT")
-	name := os.Getenv("DB_NAME")
+func SetupDatabase(config DatabaseConfig) (*Database, error) {
+	connectionString := getConnectionString(config)
 
-	user := os.Getenv("DB_USER")
-	pass := os.Getenv("DB_PASS")
+	db, err := sql.Open("mysql", connectionString)
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = db.Ping()
+	if err != nil {
+		return nil, err
+	}
+
+	output := &Database{Db: db}
+
+	SetupTableVariables(output)
+
+	return output, nil
+}
+
+func getConnectionString(config DatabaseConfig) string {
 
 	var account string
-	if pass != "" {
-		account = user + ":" + pass
+	if config.Password != "" {
+		account = config.User + ":" + config.Password
 	} else {
-		account = user
+		account = config.User
 	}
 
-	url := host + ":" + port
+	var url string
+	if config.Port != "" {
+		url = config.Host + ":" + config.Port
+	} else {
+		url = config.Host
+	}
 
-	return account + "@tcp(" + url + ")/" + name + "?parseTime=true"
+	return account + "@tcp(" + url + ")/" + config.Name + "?parseTime=true"
 }
 
-func SetupTableVariables() {
-	if tableColumns == nil {
-		tableColumns = make(map[string][]string)
+func SetupTableVariables(database *Database) {
+	if database.tableColumns == nil {
+		database.tableColumns = make(map[string][]string)
 	}
 }
 
@@ -110,18 +101,18 @@ func getColumnsFromStruct(refValue reflect.Value, columnVariables map[string]any
 	return columnVariables
 }
 
-func BuildRow(entity interface{}, result *sql.Rows) ([]interface{}, interface{}, error) {
+func BuildRow(db *Database, entity interface{}, result *sql.Rows) ([]interface{}, interface{}, error) {
 	columnVariables, ptr, tableName := getEntityConstruction(&entity)
 
 	var columns []string
-	if tableColumns[tableName] != nil {
-		columns = tableColumns[tableName]
+	if db.tableColumns[tableName] != nil {
+		columns = db.tableColumns[tableName]
 	} else {
 		resultColumns, err := result.Columns()
 		if err != nil {
 			return nil, ptr, err
 		}
-		tableColumns[tableName] = resultColumns
+		db.tableColumns[tableName] = resultColumns
 		columns = resultColumns
 	}
 

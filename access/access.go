@@ -8,8 +8,7 @@ import (
 	"reflect"
 )
 
-func GetById[T any](entity T, id any) (T, error) {
-	db := database.GetDb()
+func GetById[T any](db *database.Database, entity T, id any) (T, error) {
 	tableName := helpers.GetTableName(entity)
 
 	var query string
@@ -19,12 +18,12 @@ func GetById[T any](entity T, id any) (T, error) {
 		query = "SELECT *" + " FROM " + tableName + " WHERE id = ? LIMIT 1"
 	}
 
-	result, err := db.Query(query, id)
+	result, err := db.Db.Query(query, id)
 	if err != nil {
 		return entity, err
 	}
 
-	args, entityOutput, err := database.BuildRow(entity, result)
+	args, entityOutput, err := database.BuildRow(db, entity, result)
 	if !result.Next() {
 		return entity, errors.New("unable to find value")
 	}
@@ -39,8 +38,7 @@ func GetById[T any](entity T, id any) (T, error) {
 	return entity, nil
 }
 
-func GetAll[T any](entity T, limit int) ([]T, error) {
-	db := database.GetDb()
+func GetAll[T any](db *database.Database, entity T, limit int) ([]T, error) {
 	tableName := helpers.GetTableName(entity)
 
 	var args []any
@@ -56,13 +54,13 @@ func GetAll[T any](entity T, limit int) ([]T, error) {
 		args = append(args, limit)
 	}
 
-	result, err := db.Query(query, args...)
+	result, err := db.Db.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}
 
 	var retValue []T
-	args, entityOutput, err := database.BuildRow(entity, result)
+	args, entityOutput, err := database.BuildRow(db, entity, result)
 	for result.Next() {
 		if err != nil {
 			return nil, err
@@ -76,8 +74,7 @@ func GetAll[T any](entity T, limit int) ([]T, error) {
 	return retValue, nil
 }
 
-func Create[T any](values []T) (T, error) {
-	db := database.GetDb()
+func Create[T any](db *database.Database, values []T) (T, error) {
 	var entity T
 	tableName := helpers.GetTableName(entity)
 
@@ -114,13 +111,13 @@ func Create[T any](values []T) (T, error) {
 
 	query := fmt.Sprintf("INSERT"+" INTO %s (%s) values (%s)", tableName, queryColumns, queryValues)
 
-	res, err := db.Exec(query, args...)
+	res, err := db.Db.Exec(query, args...)
 	if err != nil {
 		return output, err
 	}
 
 	if !(id == nil || id == 0 || id == "") {
-		return GetById(output, id)
+		return GetById(db, output, id)
 	}
 
 	intId, err := res.LastInsertId()
@@ -128,26 +125,25 @@ func Create[T any](values []T) (T, error) {
 		return output, err
 	}
 
-	newEntity, err := GetById(output, intId)
+	newEntity, err := GetById(db, output, intId)
 
 	return newEntity, err
 }
 
-func Update[T any](value T, id any) error {
-	return update(value, id, UpdateOperationHandler)
+func Update[T any](db *database.Database, value T, id any) error {
+	return update(db, value, id, UpdateOperationHandler)
 }
 
-func Delete[T any](entity T, id any) error {
-	_, err := GetById(entity, id)
+func Delete[T any](db *database.Database, entity T, id any) error {
+	_, err := GetById(db, entity, id)
 	if err != nil {
 		return err
 	}
 
 	tableName := helpers.GetTableName(entity)
-	db := database.GetDb()
 
 	if DoesEntitySoftDelete(entity) {
-		return softDelete(entity, id)
+		return softDelete(db, entity, id)
 	} else {
 		_, err = DeleteOperationHandler(reflect.ValueOf(entity))
 		if err != nil {
@@ -156,15 +152,15 @@ func Delete[T any](entity T, id any) error {
 
 		q := "DELETE FROM " + tableName + " WHERE ID = ?"
 
-		_, err = db.Exec(q, id)
+		_, err = db.Db.Exec(q, id)
 		return err
 	}
 }
 
-func update[T any](value T, id any, operationHandler OperationHandler) error {
+func update[T any](db *database.Database, value T, id any, operationHandler OperationHandler) error {
 	var output T
 
-	existingValue, err := GetById(output, id)
+	existingValue, err := GetById(db, output, id)
 	if err != nil {
 		return err
 	}
@@ -180,7 +176,6 @@ func update[T any](value T, id any, operationHandler OperationHandler) error {
 	}
 
 	tableName := helpers.GetTableName(value)
-	db := database.GetDb()
 
 	q := "UPDATE " + tableName + " t SET "
 	qBase := q
@@ -205,7 +200,7 @@ func update[T any](value T, id any, operationHandler OperationHandler) error {
 	}
 	args = append(args, id)
 	where += idColumn.Column + " = ?"
-	_, err = db.Exec(q+where, args...)
+	_, err = db.Db.Exec(q+where, args...)
 	if err != nil {
 		return err
 	}
@@ -213,10 +208,10 @@ func update[T any](value T, id any, operationHandler OperationHandler) error {
 	return nil
 }
 
-func softDelete[T any](entity T, id any) error {
-	existingEntity, err := GetById(entity, id)
+func softDelete[T any](db *database.Database, entity T, id any) error {
+	existingEntity, err := GetById(db, entity, id)
 	if err != nil {
 		return err
 	}
-	return update(existingEntity, id, DeleteOperationHandler)
+	return update(db, existingEntity, id, DeleteOperationHandler)
 }

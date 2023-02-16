@@ -265,7 +265,7 @@ func (query *Query) buildUpdate() {
 	panic("not implemented")
 }
 
-func (query *Query) Exec() {
+func (query *Query) Exec(db *database.Database) {
 	query.Error = nil
 
 	query.Build()
@@ -273,15 +273,14 @@ func (query *Query) Exec() {
 		return
 	}
 
-	db := database.GetDb()
-	result, err := db.Query(query.query, query.args...)
+	result, err := db.Db.Query(query.query, query.args...)
 
 	query.result = result
 	query.Error = err
 }
 
-func ExecuteQuery[T any](query *Query, _ T) ([]T, error) {
-	query.Exec()
+func ExecuteQuery[T any](db *database.Database, query *Query, _ T) ([]T, error) {
+	query.Exec(db)
 	if query.Error != nil {
 		return nil, query.Error
 	}
