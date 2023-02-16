@@ -1,7 +1,7 @@
 package baseEntities
 
 import (
-	dataTypes "goApiDb/types"
+	"github.com/AubreeH/goApiDb/dataTypes"
 	"time"
 )
 

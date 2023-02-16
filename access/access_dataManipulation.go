@@ -2,7 +2,7 @@ package access
 
 import (
 	"errors"
-	"goApiDb/helpers"
+	"github.com/AubreeH/goApiDb/helpers"
 	"reflect"
 	"strings"
 )

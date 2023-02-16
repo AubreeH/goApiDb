@@ -3,8 +3,8 @@ package access
 import (
 	"errors"
 	"fmt"
-	"goApiDb/database"
-	"goApiDb/helpers"
+	"github.com/AubreeH/goApiDb/database"
+	"github.com/AubreeH/goApiDb/helpers"
 	"reflect"
 )
 

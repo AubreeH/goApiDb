@@ -2,7 +2,7 @@ package database
 
 import (
 	"database/sql"
-	"goApiDb/helpers"
+	"github.com/AubreeH/goApiDb/helpers"
 	"log"
 )
 

@@ -1,7 +1,7 @@
 package access
 
 import (
-	"goApiDb/helpers"
+	"github.com/AubreeH/goApiDb/helpers"
 	"reflect"
 )
 
