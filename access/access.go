@@ -135,7 +135,8 @@ func Update[T any](db *database.Database, value T, id any) error {
 }
 
 func Delete[T any](db *database.Database, entity T, id any) error {
-	_, err := GetById(db, entity, id)
+	var err error
+	entity, err = GetById(db, entity, id)
 	if err != nil {
 		return err
 	}
