@@ -1,4 +1,4 @@
-package baseEntities
+package entities
 
 type Dates struct {
 	CreatedAt

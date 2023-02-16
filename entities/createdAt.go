@@ -1,4 +1,4 @@
-package baseEntities
+package entities
 
 import (
 	"github.com/AubreeH/goApiDb/dataTypes"
