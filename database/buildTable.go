@@ -6,9 +6,9 @@ import (
 	"log"
 )
 
-func buildTable(db *sql.DB, entity interface{}) {
+func BuildTable(db *Database, entity interface{}) {
 	tableName := helpers.GetTableName(entity)
-	dbTableDescription, success := getTableDescription(db, tableName)
+	dbTableDescription, success := getTableDescription(db.Db, tableName)
 	structTableDescription := helpers.ConvertStructToTableDescription(entity)
 
 	var rawSql string
@@ -18,10 +18,8 @@ func buildTable(db *sql.DB, entity interface{}) {
 		rawSql = generateCreateTableSql(tableName, structTableDescription)
 	}
 
-	log.Print(rawSql)
-
 	if rawSql != "" {
-		_, err := db.Exec(rawSql)
+		_, err := db.Db.Exec(rawSql)
 		if err != nil {
 			panic(err)
 		} else {
