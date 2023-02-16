@@ -1,9 +1,8 @@
-package goApiDb
+package access
 
 import (
 	"errors"
 	"fmt"
-	"goApiDb/access"
 	"goApiDb/database"
 	"goApiDb/helpers"
 	"reflect"
@@ -14,7 +13,7 @@ func GetById[T any](entity T, id any) (T, error) {
 	tableName := helpers.GetTableName(entity)
 
 	var query string
-	if access.DoesEntitySoftDelete(entity) {
+	if DoesEntitySoftDelete(entity) {
 		query = "SELECT *" + " FROM " + tableName + " WHERE deleted = false AND id = ? LIMIT 1"
 	} else {
 		query = "SELECT *" + " FROM " + tableName + " WHERE id = ? LIMIT 1"
@@ -48,7 +47,7 @@ func GetAll[T any](entity T, limit int) ([]T, error) {
 
 	query := "SELECT * FROM " + tableName
 
-	if access.DoesEntitySoftDelete(entity) {
+	if DoesEntitySoftDelete(entity) {
 		query += " WHERE deleted = false"
 	}
 
@@ -89,7 +88,7 @@ func Create[T any](values []T) (T, error) {
 	var output T
 	var id any
 	for i := range values {
-		rowData, err := access.GetData(values[i], access.CreateOperationHandler)
+		rowData, err := GetData(values[i], CreateOperationHandler)
 		if err != nil {
 			return output, err
 		}
@@ -135,7 +134,7 @@ func Create[T any](values []T) (T, error) {
 }
 
 func Update[T any](value T, id any) error {
-	return update(value, id, access.UpdateOperationHandler)
+	return update(value, id, UpdateOperationHandler)
 }
 
 func Delete[T any](entity T, id any) error {
@@ -147,10 +146,10 @@ func Delete[T any](entity T, id any) error {
 	tableName := helpers.GetTableName(entity)
 	db := database.GetDb()
 
-	if access.DoesEntitySoftDelete(entity) {
+	if DoesEntitySoftDelete(entity) {
 		return softDelete(entity, id)
 	} else {
-		_, err = access.DeleteOperationHandler(reflect.ValueOf(entity))
+		_, err = DeleteOperationHandler(reflect.ValueOf(entity))
 		if err != nil {
 			return err
 		}
@@ -162,7 +161,7 @@ func Delete[T any](entity T, id any) error {
 	}
 }
 
-func update[T any](value T, id any, operationHandler access.OperationHandler) error {
+func update[T any](value T, id any, operationHandler OperationHandler) error {
 	var output T
 
 	existingValue, err := GetById(output, id)
@@ -170,12 +169,12 @@ func update[T any](value T, id any, operationHandler access.OperationHandler) er
 		return err
 	}
 
-	mergedValue := access.MergeObjects(existingValue, value)
-	idColumn, mergedData, err := access.GetDataAndId(mergedValue, operationHandler)
+	mergedValue := MergeObjects(existingValue, value)
+	idColumn, mergedData, err := GetDataAndId(mergedValue, operationHandler)
 	if err != nil {
 		return err
 	}
-	_, updateData, err := access.GetDataAndId(value, access.NonOperationHandler)
+	_, updateData, err := GetDataAndId(value, NonOperationHandler)
 	if err != nil {
 		return err
 	}
@@ -187,7 +186,7 @@ func update[T any](value T, id any, operationHandler access.OperationHandler) er
 	qBase := q
 	var where string
 
-	if access.DoesEntitySoftDelete(value) {
+	if DoesEntitySoftDelete(value) {
 		where = " WHERE deleted = false AND t."
 	} else {
 		where = " WHERE t."
@@ -219,5 +218,5 @@ func softDelete[T any](entity T, id any) error {
 	if err != nil {
 		return err
 	}
-	return update(existingEntity, id, access.DeleteOperationHandler)
+	return update(existingEntity, id, DeleteOperationHandler)
 }
