@@ -35,12 +35,23 @@ func randSeq(n int) string {
 }
 
 func getDatabaseConfig() database.DatabaseConfig {
+	host := os.Getenv("DB_HOST")
+	port := os.Getenv("DB_PORT")
+	name := os.Getenv("DB_NAME")
+	user := os.Getenv("DB_USER")
+	pass := os.Getenv("DB_PASS")
+	if host == "" && port == "" {
+		host = "127.0.0.1"
+		port = "10101"
+		name = "testing"
+	}
+
 	return database.DatabaseConfig{
-		Host:     os.Getenv("DB_HOST"),
-		Port:     os.Getenv("DB_PORT"),
-		User:     os.Getenv("DB_USER"),
-		Password: os.Getenv("DB_PASS"),
-		Name:     os.Getenv("DB_NAME"),
+		Host:     host,
+		Port:     port,
+		User:     user,
+		Password: pass,
+		Name:     name,
 	}
 }
 
