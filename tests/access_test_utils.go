@@ -16,7 +16,7 @@ func setupGetById() (output testingEntity, err error) {
 
 	tableName := helpers.GetTableName(testingEntity{})
 	id, _, err := seedTableWithValueInMiddle(
-		1000,
+		10000,
 		tableName,
 		map[string]string{
 			"name":        "string",
@@ -41,7 +41,7 @@ func setupGetById() (output testingEntity, err error) {
 
 func setupGetAll() (expectedValue map[int64]map[string]any, err error) {
 	tableName := helpers.GetTableName(testingEntity{})
-	return seedTable(1000, tableName, map[string]string{
+	return seedTable(10000, tableName, map[string]string{
 		"name":        "string",
 		"description": "string",
 	})

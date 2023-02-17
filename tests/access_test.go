@@ -19,7 +19,7 @@ func Test_GetById_Success(t *testing.T) {
 	end := time.Now()
 	assert(t, condition(err != nil, err))
 
-	t.Log("GetById Duration", end.UnixMicro()-start.UnixMicro())
+	t.Log("GetById Duration", end.UnixMicro()-start.UnixMicro(), "At Id of", testEntity.Id)
 
 	assert(t,
 		condition(testEntity.Id != entity.Id, "ids do no match"),
