@@ -45,9 +45,9 @@ func getConnectionString(config DatabaseConfig) string {
 
 	var account string
 	if config.Password != "" {
-		account = config.User + ":" + config.Password
+		account = config.User + ":" + config.Password + "@"
 	} else {
-		account = config.User
+		account = config.User + "@"
 	}
 
 	var url string
@@ -57,7 +57,7 @@ func getConnectionString(config DatabaseConfig) string {
 		url = config.Host
 	}
 
-	return account + "@tcp(" + url + ")/" + config.Name + "?parseTime=true"
+	return account + "tcp(" + url + ")/" + config.Name + "?parseTime=true"
 }
 
 func SetupTableVariables(database *Database) {
