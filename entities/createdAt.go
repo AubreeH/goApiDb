@@ -13,3 +13,7 @@ func (val CreatedAt) OnCreate() (CreatedAt, error) {
 	val.CreatedAt = dataTypes.Time{Time: time.Now()}
 	return val, nil
 }
+
+func (_ CreatedAt) GetPtrFunc(value *CreatedAt) *time.Time {
+	return value.CreatedAt.GetPtrFunc(&value.CreatedAt)
+}

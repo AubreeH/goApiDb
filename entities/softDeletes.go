@@ -8,3 +8,7 @@ func (val SoftDeletes) OnDelete() (SoftDeletes, error) {
 	val.Deleted = true
 	return val, nil
 }
+
+func (_ SoftDeletes) GetPtrFunc(value *SoftDeletes) *bool {
+	return &value.Deleted
+}

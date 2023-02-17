@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"github.com/AubreeH/goApiDb/helpers"
+	_ "github.com/go-sql-driver/mysql"
 	"reflect"
 )
 

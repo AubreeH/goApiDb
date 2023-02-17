@@ -15,3 +15,10 @@ func (val DeletedAt) OnDelete() (DeletedAt, error) {
 	val.DeletedAt = dataTypes.NullTime{NullTime: sql.NullTime{Time: time.Now(), Valid: true}}
 	return val, nil
 }
+
+func (_ DeletedAt) GetPtrFunc(value *DeletedAt) []any {
+	return []any{
+		value.DeletedAt.GetPtrFunc(&value.DeletedAt),
+		value.SoftDeletes.GetPtrFunc(&value.SoftDeletes),
+	}
+}

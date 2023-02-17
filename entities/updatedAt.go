@@ -18,3 +18,7 @@ func (val UpdatedAt) OnUpdate() (UpdatedAt, error) {
 	val.UpdatedAt = dataTypes.Time{Time: time.Now()}
 	return val, nil
 }
+
+func (_ UpdatedAt) GetPtrFunc(value *UpdatedAt) *time.Time {
+	return value.UpdatedAt.GetPtrFunc(&value.UpdatedAt)
+}

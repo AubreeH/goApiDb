@@ -6,9 +6,13 @@ import (
 	"log"
 )
 
-func BuildTable(db *Database, entity interface{}) {
+func BuildTable(db *Database, entity interface{}) error {
 	tableName := helpers.GetTableName(entity)
-	dbTableDescription, success := getTableDescription(db.Db, tableName)
+	dbTableDescription, success, err := getTableDescription(db.Db, tableName)
+	if err != nil {
+		return err
+	}
+
 	structTableDescription := helpers.ConvertStructToTableDescription(entity)
 
 	var rawSql string
@@ -19,9 +23,9 @@ func BuildTable(db *Database, entity interface{}) {
 	}
 
 	if rawSql != "" {
-		_, err := db.Db.Exec(rawSql)
+		_, err = db.Db.Exec(rawSql)
 		if err != nil {
-			panic(err)
+			return err
 		} else {
 			if success {
 				log.Println("Updated table " + tableName)
@@ -30,6 +34,7 @@ func BuildTable(db *Database, entity interface{}) {
 			}
 		}
 	}
+	return nil
 }
 
 func generateModifyTableSQL(tableName string, dbTableDescription helpers.TableDescription, structTableDescription helpers.TableDescription) string {
@@ -113,10 +118,10 @@ func generateCreateTableSql(tableName string, structTableDescription helpers.Tab
 
 	rawSql += ")"
 
-	return ""
+	return rawSql
 }
 
-func getTableDescription(db *sql.DB, tableName string) (helpers.TableDescription, bool) {
+func getTableDescription(db *sql.DB, tableName string) (helpers.TableDescription, bool, error) {
 	var tableDescription helpers.TableDescription
 
 	results, err := db.Query("DESCRIBE " + tableName)
@@ -124,16 +129,16 @@ func getTableDescription(db *sql.DB, tableName string) (helpers.TableDescription
 	if err == nil {
 		for results.Next() {
 			var columnDescription helpers.ColumnDescription
-			err := results.Scan(&columnDescription.Field, &columnDescription.Type, &columnDescription.Null, &columnDescription.Key, &columnDescription.Default, &columnDescription.Extra)
+			err = results.Scan(&columnDescription.Field, &columnDescription.Type, &columnDescription.Null, &columnDescription.Key, &columnDescription.Default, &columnDescription.Extra)
 
 			if err != nil {
-				panic(err)
+				return tableDescription, false, err
 			}
 			tableDescription = append(tableDescription, columnDescription)
 		}
 
-		return tableDescription, true
+		return tableDescription, true, nil
 	}
 
-	return tableDescription, false
+	return tableDescription, false, nil
 }

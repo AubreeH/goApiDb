@@ -38,3 +38,7 @@ func (value NullString) ExtractDataFunc() any {
 
 	return nil
 }
+
+func (_ NullString) GetPtrFunc(value *NullString) *sql.NullString {
+	return &value.NullString
+}
