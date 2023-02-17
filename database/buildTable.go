@@ -6,7 +6,7 @@ import (
 	"log"
 )
 
-func BuildTable(db *Database, entity interface{}) error {
+func BuildTable(db *Database, entity interface{}, doLog bool) error {
 	tableName := helpers.GetTableName(entity)
 	dbTableDescription, success, err := getTableDescription(db.Db, tableName)
 	if err != nil {
@@ -26,7 +26,7 @@ func BuildTable(db *Database, entity interface{}) error {
 		_, err = db.Db.Exec(rawSql)
 		if err != nil {
 			return err
-		} else {
+		} else if doLog {
 			if success {
 				log.Println("Updated table " + tableName)
 			} else {

@@ -2,110 +2,80 @@ package tests
 
 import (
 	"github.com/AubreeH/goApiDb/access"
-	"github.com/AubreeH/goApiDb/helpers"
 	"testing"
+	"time"
 )
-
-type testingEntity struct {
-	Id          int64  `json:"id" sql_name:"id" sql_type:"int(64)" sql_key:"PRIMARY" sql_extras:"AUTO_INCREMENT" sql_nullable:"NO" sql_disallow_external_modification:"true"`
-	Name        string `json:"name" sql_name:"name" sql_type:"VARCHAR(256)" sql_nullable:"NO"`
-	Description string `json:"description" sql_name:"description" sql_type:"VARCHAR(256)" sql_nullable:"NO"`
-}
-
-func setupGetById() (testingEntity, error) {
-	testEntityName := randSeq(20)
-	testEntityDescription := randSeq(20)
-
-	tableName := helpers.GetTableName(testingEntity{})
-	id, err := seedTableWithValueInMiddle(
-		1000,
-		tableName,
-		map[string]string{
-			"name":        "string",
-			"description": "string",
-		},
-		map[string]any{
-			"name":        testEntityName,
-			"description": testEntityDescription,
-		},
-	)
-	if err != nil {
-		return testingEntity{}, nil
-	}
-
-	testEntity := testingEntity{
-		Id:          id,
-		Name:        testEntityName,
-		Description: testEntityDescription,
-	}
-	return testEntity, nil
-}
 
 func Test_GetById_Success(t *testing.T) {
 	closeFunc, err := setupTable(testingEntity{})
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	assert(t, condition(err != nil, err))
 	defer closeFunc()
 
 	testEntity, err := setupGetById()
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	assert(t, condition(err != nil, err))
 
+	start := time.Now()
 	entity, err := access.GetById(db, testingEntity{}, testEntity.Id)
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	end := time.Now()
+	assert(t, condition(err != nil, err))
 
-	if testEntity.Id != entity.Id {
-		t.Error("Ids do not match")
-	}
+	t.Log("GetById Duration", end.UnixMicro()-start.UnixMicro())
 
-	if testEntity.Name != entity.Name {
-		t.Error("Names do not match")
-	}
-
-	if testEntity.Description != entity.Description {
-		t.Error("Descriptions do not match")
-	}
+	assert(t,
+		condition(testEntity.Id != entity.Id, "ids do no match"),
+		condition(testEntity.Name != entity.Name, "names do not match"),
+		condition(testEntity.Description != entity.Description, "descriptions do not match"),
+	)
 }
 
 func Test_GetById_InvalidId(t *testing.T) {
 	closeFunc, err := setupTable(testingEntity{})
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	assert(t, condition(err != nil, err))
 	defer closeFunc()
 
 	_, err = setupGetById()
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	assert(t, condition(err != nil, err))
 
+	start := time.Now()
 	entity, err := access.GetById(db, testingEntity{}, "abc")
-	if err == nil {
-		t.Error("No result should have returned error")
-		return
-	} else if err.Error() != "unable to find value" {
-		t.Error(err)
-		return
-	}
+	end := time.Now()
+	assert(t, condition(err != nil && err.Error() != "unable to find value", err.Error()))
 
-	if entity.Id != 0 {
-		t.Error("Testing entity id should be 0")
-	}
+	t.Log("GetById Duration", end.UnixMicro()-start.UnixMicro())
 
-	if entity.Name != "" {
-		t.Error("Testing entity name should be empty string")
-	}
+	assert(t,
+		condition(entity.Id != 0, "testing entity id should be 0"),
+		condition(entity.Name != "", "testing entity name should be empty string"),
+		condition(entity.Description != "", "testing entity description should be empty string"),
+	)
+	assert(t, condition(err == nil, "no result should have returned error"))
+}
 
-	if entity.Description != "" {
-		t.Error("Testing entity description should be empty string")
+func Test_GetAll_Success(t *testing.T) {
+	closeFunc, err := setupTable(testingEntity{})
+	assert(t, condition(err != nil, err))
+	defer closeFunc()
+
+	seededValues, err := setupGetAll()
+	assert(t, condition(err != nil, err))
+
+	start := time.Now()
+	results, err := access.GetAll(db, testingEntity{}, 0)
+	end := time.Now()
+	assert(t, condition(err != nil, err))
+
+	t.Log("GetAll Duration", end.UnixMicro()-start.UnixMicro())
+
+	assert(t, condition(len(results) != len(seededValues), "length of GetAll result differs from length of seeded values (Length of Results:", len(results), ", Length of Seeded Values: ", len(seededValues), ")"))
+
+	for _, v := range results {
+		seededValue := seededValues[v.Id]
+
+		assert(t, condition(seededValue == nil, "unexpected id from result (", v.Id, ")"))
+
+		assert(t,
+			condition(v.Name != seededValue["name"], "names do not match (", v.Name, "!=", seededValue["name"], ")"),
+			condition(v.Description != seededValue["description"], "descriptions do not match (", v.Description, "!=", seededValue["name"], ")"),
+		)
 	}
 }

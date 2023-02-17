@@ -8,6 +8,7 @@ import (
 	"math/rand"
 	"os"
 	"strings"
+	"testing"
 	"time"
 )
 
@@ -80,10 +81,10 @@ func setupTable(entity interface{}) (func(), error) {
 		return
 	}
 
-	return closeFunc, database.BuildTable(db, entity)
+	return closeFunc, database.BuildTable(db, entity, false)
 }
 
-func seedTable(count int, table string, columns map[string]string) error {
+func seedTable(count int, table string, columns map[string]string) (map[int64]map[string]any, error) {
 	var columnNames []string
 	var valuePlaceholders []string
 	var types []string
@@ -96,10 +97,14 @@ func seedTable(count int, table string, columns map[string]string) error {
 
 	var values []string
 	var args []any
+
+	var seededValues = make(map[int64]map[string]any, count+1)
 	for i := 0; i < count; i++ {
 		values = append(values, "("+strings.Join(valuePlaceholders, ", ")+")")
 
-		for _, v := range types {
+		seededValues[int64(i+1)] = make(map[string]any, len(columnNames))
+
+		for k, v := range types {
 			var arg any
 			switch v {
 			case "string":
@@ -112,6 +117,7 @@ func seedTable(count int, table string, columns map[string]string) error {
 				arg = time.UnixMilli(rand.Int63n(time.Now().UnixMilli()))
 			}
 			args = append(args, arg)
+			seededValues[int64(i+1)][columnNames[k]] = arg
 		}
 	}
 
@@ -119,28 +125,61 @@ func seedTable(count int, table string, columns map[string]string) error {
 	columnsString := strings.Join(columnNames, ", ")
 	query := fmt.Sprintf("INSERT INTO %s (%s) VALUES %s", table, columnsString, valuesString)
 	_, err := db.Db.Exec(query, args...)
-	return err
+	return seededValues, err
 }
 
-func seedTableWithValueInMiddle(count int, table string, columns map[string]string, data map[string]any) (int64, error) {
+func seedTableWithValueInMiddle(count int, table string, columns map[string]string, data map[string]any) (int64, map[int64]map[string]any, error) {
 	lowerBound := rand.Intn(count-19) + 10
 	upperBound := count - lowerBound - 1
 
-	err := seedTable(lowerBound, table, columns)
+	var output map[int64]map[string]any
+
+	seededValuesLower, err := seedTable(lowerBound, table, columns)
 	if err != nil {
-		return 0, err
+		return 0, output, err
 	}
 
 	id, err := createDatabaseRow(db, table, data)
 	if err != nil {
-		return 0, err
+		return 0, output, err
 	}
 
-	err = seedTable(upperBound, table, columns)
+	seededValuesUpper, err := seedTable(upperBound, table, columns)
 	if err != nil {
-		return 0, err
+		return 0, output, err
 	}
 
-	return id, nil
+	for k, v := range seededValuesUpper {
+		seededValuesLower[k] = v
+	}
 
+	return id, seededValuesLower, nil
+
+}
+
+type c struct {
+	Condition bool
+	Args      []any
+}
+
+func condition(condition bool, args ...any) c {
+	return c{
+		Condition: condition,
+		Args:      args,
+	}
+}
+
+func assert(t *testing.T, conditions ...c) {
+	fail := false
+
+	for _, v := range conditions {
+		if v.Condition {
+			fail = true
+			t.Error(v.Args...)
+		}
+	}
+
+	if fail {
+		t.FailNow()
+	}
 }
