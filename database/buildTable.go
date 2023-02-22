@@ -6,7 +6,7 @@ import (
 	"log"
 )
 
-func BuildTable(db *Database, entity interface{}, doLog bool) error {
+func BuildTable(db *Database, entity interface{}, doLog bool, exec bool) error {
 	tableName := helpers.GetTableName(entity)
 	dbTableDescription, success, err := getTableDescription(db.Db, tableName)
 	if err != nil {
@@ -16,14 +16,32 @@ func BuildTable(db *Database, entity interface{}, doLog bool) error {
 	structTableDescription := helpers.ConvertStructToTableDescription(entity)
 
 	var rawSql string
+	var constraints []string
 	if success {
 		rawSql = generateModifyTableSQL(tableName, dbTableDescription, structTableDescription)
 	} else {
-		rawSql = generateCreateTableSql(tableName, structTableDescription)
+		rawSql, constraints = generateCreateTableSql(tableName, structTableDescription)
 	}
 
 	if rawSql != "" {
-		_, err = db.Db.Exec(rawSql)
+		if exec {
+			_, err = db.Db.Exec(rawSql)
+			if err != nil {
+				return err
+			}
+
+			for _, v := range constraints {
+				_, err = db.Db.Exec(v)
+				if err != nil {
+					return err
+				}
+			}
+		} else {
+			log.Print(rawSql)
+			for _, v := range constraints {
+				log.Print(v)
+			}
+		}
 		if err != nil {
 			return err
 		} else if doLog {
@@ -102,7 +120,7 @@ func generateModifyTableSQL(tableName string, dbTableDescription helpers.TableDe
 	return rawSql
 }
 
-func generateCreateTableSql(tableName string, structTableDescription helpers.TableDescription) string {
+func generateCreateTableSql(tableName string, structTableDescription helpers.TableDescription) (string, []string) {
 	rawSql := "CREATE TABLE " + tableName + "("
 
 	var constraints []string
@@ -113,12 +131,12 @@ func generateCreateTableSql(tableName string, structTableDescription helpers.Tab
 			rawSql += ", "
 		}
 		rawSql += column.FormatSqlColumn()
-		constraints = append(constraints, column.FormatSqlConstraints()...)
+		constraints = append(constraints, column.FormatSqlConstraints(tableName)...)
 	}
 
 	rawSql += ")"
 
-	return rawSql
+	return rawSql, constraints
 }
 
 func getTableDescription(db *sql.DB, tableName string) (helpers.TableDescription, bool, error) {

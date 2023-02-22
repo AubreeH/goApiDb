@@ -111,7 +111,7 @@ func (description ColumnDescription) FormatSqlColumn() string {
 	return sqlString
 }
 
-func (description ColumnDescription) FormatSqlConstraints() []string {
+func (description ColumnDescription) FormatSqlConstraints(tableName string) []string {
 	var output []string
 
 	re, err := regexp.Compile("foreign,(?P<table>.*?),(?P<column>.*)")
@@ -121,7 +121,7 @@ func (description ColumnDescription) FormatSqlConstraints() []string {
 
 	submatch := re.FindStringSubmatch(description.Key)
 	if len(submatch) > 1 {
-		constraint := "FOREIGN KEY (" + description.Field + ") REFERENCES " + submatch[1] + "(" + submatch[2] + ")"
+		constraint := "ALTER TABLE " + tableName + " ADD FOREIGN KEY (" + description.Field + ") REFERENCES " + submatch[1] + "(" + submatch[2] + ")"
 		log.Print(constraint)
 	}
 
