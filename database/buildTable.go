@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"github.com/AubreeH/goApiDb/helpers"
 	"log"
+	"strings"
 )
 
 func BuildTable(db *Database, entity interface{}, doLog bool, exec bool) error {
@@ -20,7 +21,7 @@ func BuildTable(db *Database, entity interface{}, doLog bool, exec bool) error {
 	if success {
 		rawSql = generateModifyTableSQL(tableName, dbTableDescription, structTableDescription)
 	} else {
-		rawSql, constraints = generateCreateTableSql(tableName, structTableDescription)
+		rawSql = generateCreateTableSql(tableName, structTableDescription)
 	}
 
 	if rawSql != "" {
@@ -56,7 +57,6 @@ func BuildTable(db *Database, entity interface{}, doLog bool, exec bool) error {
 }
 
 func generateModifyTableSQL(tableName string, dbTableDescription helpers.TableDescription, structTableDescription helpers.TableDescription) string {
-
 	var columnsToAdd helpers.TableDescription
 	var columnsToUpdate helpers.TableDescription
 	var columnsToRemove helpers.TableDescription
@@ -120,23 +120,21 @@ func generateModifyTableSQL(tableName string, dbTableDescription helpers.TableDe
 	return rawSql
 }
 
-func generateCreateTableSql(tableName string, structTableDescription helpers.TableDescription) (string, []string) {
+func generateCreateTableSql(tableName string, structTableDescription helpers.TableDescription) string {
 	rawSql := "CREATE TABLE " + tableName + "("
 
+	var columns []string
 	var constraints []string
 
 	for i := range structTableDescription {
 		column := structTableDescription[i]
-		if i != 0 {
-			rawSql += ", "
-		}
-		rawSql += column.FormatSqlColumn()
+		columns = append(columns, column.FormatSqlColumn())
 		constraints = append(constraints, column.FormatSqlConstraints(tableName)...)
 	}
 
-	rawSql += ")"
+	rawSql += strings.Join(columns, ", ") + strings.Join(constraints, ", ") + ")"
 
-	return rawSql, constraints
+	return rawSql
 }
 
 func getTableDescription(db *sql.DB, tableName string) (helpers.TableDescription, bool, error) {
