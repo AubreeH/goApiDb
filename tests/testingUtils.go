@@ -81,7 +81,7 @@ func setupTable(entity interface{}) (func(), error) {
 		return
 	}
 
-	return closeFunc, database.BuildTable(db, entity, false)
+	return closeFunc, database.BuildTable(db, entity, false, true)
 }
 
 func seedTable(count int, table string, columns map[string]string) (map[int64]map[string]any, error) {
