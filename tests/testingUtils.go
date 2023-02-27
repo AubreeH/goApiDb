@@ -17,7 +17,14 @@ var db *database.Database
 func init() {
 	rand.Seed(time.Now().UnixNano())
 	err := godotenv.Load("../.env")
+	if err != nil {
+		panic(err)
+	}
+}
+
+func InitDb() {
 	conf := getDatabaseConfig()
+	var err error
 	db, err = database.SetupDatabase(conf)
 	if err != nil {
 		panic(err)
@@ -182,4 +189,8 @@ func assert(t *testing.T, conditions ...c) {
 	if fail {
 		t.FailNow()
 	}
+}
+
+func assertError(t *testing.T, err error) {
+	assert(t, condition(err != nil, err))
 }

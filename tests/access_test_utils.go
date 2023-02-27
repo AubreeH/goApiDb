@@ -1,20 +1,23 @@
 package tests
 
 import (
+	"github.com/AubreeH/goApiDb/entities"
 	"github.com/AubreeH/goApiDb/helpers"
 )
 
 type testingEntity1 struct {
-	Id            int64  `json:"id" sql_name:"id" sql_type:"int(64)" sql_key:"PRIMARY" sql_extras:"AUTO_INCREMENT" sql_nullable:"NO" sql_disallow_external_modification:"true"`
-	Name          string `json:"name" sql_name:"name" sql_type:"VARCHAR(256)" sql_nullable:"NO"`
-	Description   string `json:"description" sql_name:"description" sql_type:"VARCHAR(256)" sql_nullable:"NO"`
-	TestEntity2Id int64  `json:"test_entity_2_id" sql_name:"test_entity_2_id" sql_key:"foreign,testing_entity2s,id"`
+	entities.EntityBase `table_name:"test_entity_1"`
+	Id                  int64  `json:"id" sql_name:"id" sql_type:"int(64)" sql_key:"PRIMARY" sql_extras:"AUTO_INCREMENT" sql_nullable:"NO" sql_disallow_external_modification:"true"`
+	Name                string `json:"name" sql_name:"name" sql_type:"VARCHAR(256)" sql_nullable:"NO"`
+	Description         string `json:"description" sql_name:"description" sql_type:"VARCHAR(256)" sql_nullable:"NO"`
+	TestEntity2Id       int64  `json:"test_entity_2_id" sql_name:"test_entity_2_id" sql_key:"foreign,testing_entity2s,id"`
 }
 
 type testingEntity2 struct {
-	Id          int64  `json:"id" sql_name:"id" sql_type:"int(64)" sql_key:"PRIMARY" sql_extras:"AUTO_INCREMENT" sql_nullable:"NO" sql_disallow_external_modification:"true"`
-	Name        string `json:"name" sql_name:"name" sql_type:"VARCHAR(256)" sql_nullable:"NO"`
-	Description string `json:"description" sql_name:"description" sql_type:"VARCHAR(256)" sql_nullable:"NO"`
+	entities.EntityBase `table_name:"test_entity_2"`
+	Id                  int64  `json:"id" sql_name:"id" sql_type:"int(64)" sql_key:"PRIMARY" sql_extras:"AUTO_INCREMENT" sql_nullable:"NO" sql_disallow_external_modification:"true"`
+	Name                string `json:"name" sql_name:"name" sql_type:"VARCHAR(256)" sql_nullable:"NO"`
+	Description         string `json:"description" sql_name:"description" sql_type:"VARCHAR(256)" sql_nullable:"NO"`
 }
 
 func setupGetById() (output testingEntity1, err error) {

@@ -3,6 +3,7 @@ package database
 import (
 	"errors"
 	"fmt"
+	"github.com/AubreeH/goApiDb/entities"
 	"github.com/AubreeH/goApiDb/helpers"
 	"log"
 	"reflect"
@@ -34,31 +35,54 @@ type ColDesc struct {
 	DisallowExternalModification bool
 }
 
-func GetTableSqlDescription[TModel any]() error {
-	var model TModel
+func GetTableSqlDescriptionFromEntity[TEntity any]() (TablDesc, error) {
+	var model TEntity
+	tableDescription := TablDesc{}
 
 	refValue := reflect.ValueOf(model)
 	refType := reflect.TypeOf(model)
 
 	if refType.Kind() != reflect.Struct {
-		return errors.New("provided type is not a struct")
+		return TablDesc{}, errors.New("provided type is not a struct")
 	}
 
-	var columns []string
-	var constraints []string
+	tableInfo, err := entities.GetTableInfo(model)
+	if err != nil {
+		return TablDesc{}, err
+	}
+
+	tableDescription.Name = tableInfo.Name
 
 	for i := 0; i < refValue.NumField(); i++ {
-		colString, colConstraints := parseColumn(helpers.GetTableName(model), refValue.Type().Field(i))
-		columns = append(columns, colString)
-		constraints = append(constraints, colConstraints...)
+		field := refValue.Type().Field(i)
+		if field.Type != reflect.TypeOf(entities.EntityBase{}) {
+			colDesc := parseColumn(tableInfo.Name, field)
+			tableDescription.Columns = append(tableDescription.Columns, colDesc)
+		}
 	}
 
-	log.Print(columns, constraints)
-
-	return errors.New("not yet implemented")
+	return tableDescription, nil
 }
 
-func parseColumn(tableName string, structField reflect.StructField) (colString string, constraints []string) {
+func GetTableSqlDescriptionFromDb(db *Database, tableName string) (TablDesc, error) {
+	result, err := db.Db.Query(fmt.Sprintf("DESCRIBE %s", tableName))
+	if err != nil {
+		return TablDesc{}, err
+	}
+
+	//tableDescription := TablDesc{Name: tableName}
+	log.Print(result.Columns())
+
+	//for result.Next() {
+	//	colDesc := ColDesc{}
+	//
+	//	tableDescription.Columns = append(tableDescription.Columns, ColDesc{})
+	//}
+
+	return TablDesc{}, nil
+}
+
+func parseColumn(tableName string, structField reflect.StructField) ColDesc {
 	desc := ColDesc{}
 	helpers.TagLookup(structField, tagSqlName, &desc.Name)
 	helpers.TagLookup(structField, tagSqlType, &desc.Type)
@@ -71,7 +95,7 @@ func parseColumn(tableName string, structField reflect.StructField) (colString s
 	helpers.TagLookup(structField, tagSqlDisallowExternalModification, &output)
 	desc.DisallowExternalModification = helpers.ParseBool(output)
 
-	return desc.Format(tableName)
+	return desc
 }
 
 func (col ColDesc) Format(tableName string) (string, []string) {
@@ -88,6 +112,10 @@ func (col ColDesc) Format(tableName string) (string, []string) {
 	helpers.ArrAdd(&s, col.Name, t, key, nullable, def, extras)
 
 	return strings.Join(s, " "), constraints
+}
+
+func (tabl TablDesc) Format() (string, []string) {
+	return "", nil
 }
 
 func formatKey(tableName string, columnName string, key string) (out string, constraint string) {
