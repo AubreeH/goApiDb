@@ -115,7 +115,19 @@ func (col ColDesc) Format(tableName string) (string, []string) {
 }
 
 func (tabl TablDesc) Format() (string, []string) {
-	return "", nil
+
+	var columns []string
+	var constraints []string
+
+	for _, col := range tabl.Columns {
+		colString, colConstrains := col.Format(tabl.Name)
+		columns = append(columns, colString)
+		constraints = append(constraints, colConstrains...)
+	}
+
+	sql := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", tabl.Name, strings.Join(columns, ", "))
+
+	return sql, constraints
 }
 
 func formatKey(tableName string, columnName string, key string) (out string, constraint string) {
@@ -132,7 +144,7 @@ func formatKey(tableName string, columnName string, key string) (out string, con
 		}
 
 		fkName := fmt.Sprintf("FK_%s_%s_%s_%s", tableName, columnName, s[1], s[2])
-		c := fmt.Sprintf("ALTER TABLE %s ADD FOREIGN KEY %s REFERENCES %s(%s)", tableName, fkName, s[1], s[2])
+		c := fmt.Sprintf("ALTER TABLE %s ADD FOREIGN KEY %s(%s) REFERENCES %s(%s)", tableName, fkName, columnName, s[1], s[2])
 
 		return "", c
 	}

@@ -12,8 +12,10 @@ func Test_GetTableSqlDescription(t *testing.T) {
 	entityTableDescription, err := database.GetTableSqlDescriptionFromEntity[testingEntity1]()
 	assertError(t, err)
 
+	log.Print(entityTableDescription.Format())
+
 	sqlTableDescription, err := database.GetTableSqlDescriptionFromDb(db, entityTableDescription.Name)
 	assertError(t, err)
 
-	log.Print(sqlTableDescription)
+	log.Print(sqlTableDescription.Format())
 }
