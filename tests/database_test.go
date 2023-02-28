@@ -9,13 +9,5 @@ import (
 func Test_GetTableSqlDescription(t *testing.T) {
 	InitDb()
 
-	entityTableDescription, err := database.GetTableSqlDescriptionFromEntity[testingEntity1]()
-	assertError(t, err)
-
-	log.Print(entityTableDescription.Format())
-
-	sqlTableDescription, err := database.GetTableSqlDescriptionFromDb(db, entityTableDescription.Name)
-	assertError(t, err)
-
-	log.Print(sqlTableDescription.Format())
+	log.Print(database.GetUpdateTableQueries[testingEntity1](db))
 }

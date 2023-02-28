@@ -1,11 +1,11 @@
 package database
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"github.com/AubreeH/goApiDb/entities"
 	"github.com/AubreeH/goApiDb/helpers"
-	"log"
 	"reflect"
 	"strings"
 )
@@ -19,21 +19,6 @@ const (
 	tagSqlDefault                      = "sql_default"
 	tagSqlDisallowExternalModification = "sql_disallow_external_modification"
 )
-
-type TablDesc struct {
-	Name    string
-	Columns []ColDesc
-}
-
-type ColDesc struct {
-	Name                         string
-	Type                         string
-	Key                          string
-	Extras                       string
-	Nullable                     string
-	Default                      string
-	DisallowExternalModification bool
-}
 
 func GetTableSqlDescriptionFromEntity[TEntity any]() (TablDesc, error) {
 	var model TEntity
@@ -56,7 +41,7 @@ func GetTableSqlDescriptionFromEntity[TEntity any]() (TablDesc, error) {
 	for i := 0; i < refValue.NumField(); i++ {
 		field := refValue.Type().Field(i)
 		if field.Type != reflect.TypeOf(entities.EntityBase{}) {
-			colDesc := parseColumn(tableInfo.Name, field)
+			colDesc := parseColumn(field)
 			tableDescription.Columns = append(tableDescription.Columns, colDesc)
 		}
 	}
@@ -65,24 +50,38 @@ func GetTableSqlDescriptionFromEntity[TEntity any]() (TablDesc, error) {
 }
 
 func GetTableSqlDescriptionFromDb(db *Database, tableName string) (TablDesc, error) {
+	if tableName == "" {
+		return TablDesc{}, errors.New("empty table name provided")
+	}
+
 	result, err := db.Db.Query(fmt.Sprintf("DESCRIBE %s", tableName))
 	if err != nil {
 		return TablDesc{}, err
 	}
 
-	//tableDescription := TablDesc{Name: tableName}
-	log.Print(result.Columns())
+	tableDescription := TablDesc{Name: tableName}
+	for result.Next() {
+		colDesc := ColDesc{}
 
-	//for result.Next() {
-	//	colDesc := ColDesc{}
-	//
-	//	tableDescription.Columns = append(tableDescription.Columns, ColDesc{})
-	//}
+		var sqlDefault sql.NullString
+		err = result.Scan(&colDesc.Name, &colDesc.Type, &colDesc.Nullable, &colDesc.Key, &sqlDefault, &colDesc.Extras)
+		if err != nil {
+			return TablDesc{}, err
+		}
+		colDesc.Default = sqlDefault.String
 
-	return TablDesc{}, nil
+		err = colDesc.getKeyFromDb(db, tableName)
+		if err != nil {
+			return TablDesc{}, err
+		}
+
+		tableDescription.Columns = append(tableDescription.Columns, colDesc)
+	}
+
+	return tableDescription, nil
 }
 
-func parseColumn(tableName string, structField reflect.StructField) ColDesc {
+func parseColumn(structField reflect.StructField) ColDesc {
 	desc := ColDesc{}
 	helpers.TagLookup(structField, tagSqlName, &desc.Name)
 	helpers.TagLookup(structField, tagSqlType, &desc.Type)
@@ -98,80 +97,124 @@ func parseColumn(tableName string, structField reflect.StructField) ColDesc {
 	return desc
 }
 
-func (col ColDesc) Format(tableName string) (string, []string) {
-	var s []string
-	var constraints []string
-
-	key, keyConstraint := formatKey(tableName, col.Name, col.Key)
-	extras := formatExtras(col.Extras)
-	nullable := formatNullable(col.Nullable)
-	def := formatDefault(col.Default)
-	t := formatType(col.Type)
-
-	helpers.ArrAdd(&constraints, keyConstraint)
-	helpers.ArrAdd(&s, col.Name, t, key, nullable, def, extras)
-
-	return strings.Join(s, " "), constraints
-}
-
-func (tabl TablDesc) Format() (string, []string) {
-
-	var columns []string
-	var constraints []string
-
-	for _, col := range tabl.Columns {
-		colString, colConstrains := col.Format(tabl.Name)
-		columns = append(columns, colString)
-		constraints = append(constraints, colConstrains...)
+func GetUpdateTableQueries[TEntity any](db *Database) (tableSql string, addConstraintsSql []string, dropConstraintsSql []string, err error) {
+	entityDesc, err := GetTableSqlDescriptionFromEntity[TEntity]()
+	if err != nil {
+		return "", nil, nil, err
 	}
 
-	sql := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", tabl.Name, strings.Join(columns, ", "))
-
-	return sql, constraints
-}
-
-func formatKey(tableName string, columnName string, key string) (out string, constraint string) {
-	if key == "" {
-		return "", ""
-	}
-
-	s := strings.Split(key, ",")
-	if strings.ToLower(s[0]) == "primary" {
-		return "PRIMARY KEY", ""
-	} else if strings.ToLower(s[0]) == "foreign" {
-		if len(s) != 3 {
-			return "", ""
+	dbDesc, err := GetTableSqlDescriptionFromDb(db, entityDesc.Name)
+	if err != nil {
+		if strings.Index(err.Error(), "Error 1146 (42S02)") == -1 {
+			return "", nil, nil, err
 		}
 
-		fkName := fmt.Sprintf("FK_%s_%s_%s_%s", tableName, columnName, s[1], s[2])
-		c := fmt.Sprintf("ALTER TABLE %s ADD FOREIGN KEY %s(%s) REFERENCES %s(%s)", tableName, fkName, columnName, s[1], s[2])
+		tableSql, addConstraintsSql = entityDesc.Format()
 
-		return "", c
+		return tableSql, addConstraintsSql, nil, nil
 	}
 
-	return "", ""
-}
-
-func formatExtras(extras string) string {
-	return extras
-}
-
-func formatNullable(nullable string) string {
-	if helpers.ParseBool(nullable) {
-		return ""
+	diff, err := GetDescriptionDifferences(entityDesc, dbDesc)
+	if err != nil {
+		return "", nil, nil, err
 	}
 
-	return "NOT NULL"
+	tableSql, addConstraintsSql, dropConstraintsSql = diff.Format()
+
+	return tableSql, addConstraintsSql, dropConstraintsSql, nil
 }
 
-func formatDefault(def string) string {
-	if def == "" {
-		return ""
+func GetDescriptionDifferences(entityDesc TablDesc, dbDesc TablDesc) (TablDescDiff, error) {
+	diff := TablDescDiff{}
+
+	columnsToAdd, columnsToModify, columnsToDrop, err := GetColumnDifferences(entityDesc.Name, entityDesc.Columns, dbDesc.Columns)
+	if err != nil {
+		return TablDescDiff{}, err
 	}
 
-	return "DEFAULT " + def
+	diff.ColumnsToAdd = columnsToAdd
+	diff.ColumnsToModify = columnsToModify
+	diff.ColumnsToDrop = columnsToDrop
+
+	constraintsToAdd, constraintsToDrop := GetConstraintDifferences(entityDesc.Constraints, dbDesc.Constraints)
+
+	diff.ConstraintsToAdd = constraintsToAdd
+	diff.ConstraintsToDrop = constraintsToDrop
+
+	return diff, nil
 }
 
-func formatType(t string) string {
-	return t
+func GetColumnDifferences(tableName string, entityColumns []ColDesc, dbColumns []ColDesc) (add []ColDesc, modify []ColDesc, drop []ColDesc, err error) {
+	add = []ColDesc{}
+	modify = []ColDesc{}
+	drop = []ColDesc{}
+
+	for _, entityCol := range entityColumns {
+		if entityCol.Name == "" {
+			return nil, nil, nil, errors.New("column with empty name provided with entity description")
+		}
+
+		dbCol, ok := helpers.ArrFindFunc(dbColumns, func(dbCol ColDesc) bool {
+			return entityCol.Name == dbCol.Name
+		})
+		if !ok {
+			add = append(add, entityCol)
+		} else {
+			entityColSql := entityCol.Format(tableName)
+			dbColSql := dbCol.Format(tableName)
+
+			if entityColSql != dbColSql {
+				modify = append(modify, entityCol)
+			}
+		}
+	}
+
+	for _, dbCol := range dbColumns {
+		if dbCol.Name == "" {
+			return nil, nil, nil, errors.New("column with empty name provided with db description")
+		}
+
+		_, ok := helpers.ArrFindFunc(entityColumns, func(entityCol ColDesc) bool {
+			return entityCol.Name == dbCol.Name
+		})
+
+		if !ok {
+			drop = append(drop, dbCol)
+		}
+	}
+
+	return add, modify, drop, nil
+}
+
+func GetConstraintDifferences(entityConstraints []Constraint, dbConstraints []Constraint) (add []Constraint, drop []Constraint) {
+	add = []Constraint{}
+	drop = []Constraint{}
+
+	for _, entityConstraint := range entityConstraints {
+		_, ok := helpers.ArrFindFunc(dbConstraints, func(dbConstraint Constraint) bool {
+			return entityConstraint.TableName == dbConstraint.TableName &&
+				entityConstraint.ColumnName == dbConstraint.ColumnName &&
+				entityConstraint.ReferencedTableName == dbConstraint.ReferencedTableName &&
+				entityConstraint.ReferencedColumnName == dbConstraint.ReferencedColumnName
+		})
+
+		if !ok {
+			add = append(add, entityConstraint)
+		}
+	}
+
+	for _, dbConstraint := range dbConstraints {
+		_, ok := helpers.ArrFindFunc(entityConstraints, func(entityConstraint Constraint) bool {
+			return entityConstraint.TableName == dbConstraint.TableName &&
+				entityConstraint.ColumnName == dbConstraint.ColumnName &&
+				entityConstraint.ReferencedTableName == dbConstraint.ReferencedTableName &&
+				entityConstraint.ReferencedColumnName == dbConstraint.ReferencedColumnName
+		})
+
+		if !ok {
+			drop = append(drop, dbConstraint)
+		}
+	}
+
+	return add, drop
 }

@@ -17,6 +17,7 @@ type DatabaseConfig struct {
 
 type Database struct {
 	Db           *sql.DB
+	dbName       string
 	tableColumns map[string][]string
 }
 
@@ -34,7 +35,7 @@ func SetupDatabase(config DatabaseConfig) (*Database, error) {
 		return nil, err
 	}
 
-	output := &Database{Db: db}
+	output := &Database{Db: db, dbName: config.Name, tableColumns: make(map[string][]string)}
 
 	SetupTableVariables(output)
 
