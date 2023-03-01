@@ -43,6 +43,7 @@ func GetTableSqlDescriptionFromEntity[TEntity any]() (TablDesc, error) {
 		if field.Type != reflect.TypeOf(entities.EntityBase{}) {
 			colDesc := parseColumn(field)
 			tableDescription.Columns = append(tableDescription.Columns, colDesc)
+			tableDescription.Constraints = append(tableDescription.Constraints, colDesc.GetConstraints(tableDescription.Name)...)
 		}
 	}
 
@@ -76,6 +77,7 @@ func GetTableSqlDescriptionFromDb(db *Database, tableName string) (TablDesc, err
 		}
 
 		tableDescription.Columns = append(tableDescription.Columns, colDesc)
+		tableDescription.Constraints = append(tableDescription.Constraints, colDesc.GetConstraints(tableName)...)
 	}
 
 	return tableDescription, nil

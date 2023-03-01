@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/AubreeH/goApiDb/helpers"
+	"log"
 	"strings"
 )
 
@@ -51,9 +52,11 @@ func (tabl TablDesc) Format() (string, []string) {
 		columns = append(columns, colString)
 
 		for _, v := range col.GetConstraints(tabl.Name) {
-			constraints = append(constraints, v.Format())
+			constraints = append(constraints, v.Format("add"))
 		}
 	}
+
+	log.Print(constraints)
 
 	return fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", tabl.Name, strings.Join(columns, ", ")), constraints
 }
@@ -76,8 +79,13 @@ func (col *ColDesc) GetConstraints(tableName string) []Constraint {
 	var constraints []Constraint
 
 	s := strings.Split(col.Key, ",")
-	if len(s) == 3 && strings.ToLower(s[0]) == "foreign" {
-		fkName := fmt.Sprintf("FK_%s_%s_%s_%s", tableName, col.Name, s[1], s[2])
+	if (len(s) == 3 || len(s) == 4) && strings.ToLower(s[0]) == "foreign" {
+		var fkName string
+		if len(s) == 4 {
+			fkName = s[3]
+		} else {
+			fkName = fmt.Sprintf("FK_%s_%s_%s_%s", tableName, col.Name, s[1], s[2])
+		}
 
 		fk := Constraint{ConstraintName: fkName, TableName: tableName, ColumnName: col.Name, ReferencedTableName: s[1], ReferencedColumnName: s[2]}
 
@@ -110,22 +118,31 @@ func (col *ColDesc) getKeyFromDb(db *Database, tableName string) error {
 		if strings.ToLower(constraintName) == "primary" {
 			col.Key = "primary"
 		} else if referencedTableName.Valid && referencedColumnName.Valid {
-			col.Key = fmt.Sprintf("foreign,%s,%s", referencedTableName.String, referencedColumnName.String)
+			col.Key = fmt.Sprintf("foreign,%s,%s,%s", referencedTableName.String, referencedColumnName.String, constraintName)
 		}
 	}
 
 	return nil
 }
 
-func (constraint Constraint) Format() string {
-	return fmt.Sprintf(
-		"ALTER TABLE %s ADD FOREIGN KEY %s(%s) REFERENCES %s(%s)",
-		constraint.TableName,
-		constraint.ConstraintName,
-		constraint.ColumnName,
-		constraint.ReferencedTableName,
-		constraint.ReferencedColumnName,
-	)
+func (constraint Constraint) Format(action string) string {
+	switch action {
+	case "drop":
+		return fmt.Sprintf(
+			"ALTER TABLE %s DROP FOREIGN KEY %s",
+			constraint.TableName,
+			constraint.ConstraintName,
+		)
+	default:
+		return fmt.Sprintf(
+			"ALTER TABLE %s ADD FOREIGN KEY %s(%s) REFERENCES %s(%s)",
+			constraint.TableName,
+			constraint.ConstraintName,
+			constraint.ColumnName,
+			constraint.ReferencedTableName,
+			constraint.ReferencedColumnName,
+		)
+	}
 }
 
 func (diff TablDescDiff) Format() (tableQuery string, addConstraintQueries []string, dropConstraintQueries []string) {
@@ -161,11 +178,11 @@ func (diff TablDescDiff) Format() (tableQuery string, addConstraintQueries []str
 	}
 
 	for _, constraint := range diff.ConstraintsToDrop {
-		dropConstraintQueries = append(dropConstraintQueries, constraint.Format())
+		dropConstraintQueries = append(dropConstraintQueries, constraint.Format("drop"))
 	}
 
 	for _, constraint := range diff.ConstraintsToAdd {
-		addConstraintQueries = append(addConstraintQueries, constraint.Format())
+		addConstraintQueries = append(addConstraintQueries, constraint.Format("add"))
 	}
 
 	tableQuery = fmt.Sprintf("ALTER TABLE %s %s;", diff.Name, columns)
