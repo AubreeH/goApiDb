@@ -20,18 +20,26 @@ const (
 	tagSqlDisallowExternalModification = "sql_disallow_external_modification"
 )
 
-func GetTableSqlDescriptionFromEntity[TEntity any]() (TablDesc, error) {
-	var model TEntity
+func GetTableSqlDescriptionFromEntity[TEntity interface{}](entity TEntity) (TablDesc, error) {
 	tableDescription := TablDesc{}
 
-	refValue := reflect.ValueOf(model)
-	refType := reflect.TypeOf(model)
+	refValue := reflect.ValueOf(entity)
+	refType := refValue.Type()
+
+	if !refValue.IsValid() {
+		return TablDesc{}, errors.New("this value is invalid")
+	}
+
+	if refType.Kind() == reflect.Interface {
+		refValue = refValue.Elem()
+		refType = refValue.Type()
+	}
 
 	if refType.Kind() != reflect.Struct {
 		return TablDesc{}, errors.New("provided type is not a struct")
 	}
 
-	tableInfo, err := entities.GetTableInfo(model)
+	tableInfo, err := entities.GetTableInfo(entity)
 	if err != nil {
 		return TablDesc{}, err
 	}
@@ -99,8 +107,8 @@ func parseColumn(structField reflect.StructField) ColDesc {
 	return desc
 }
 
-func GetUpdateTableQueries[TEntity any](db *Database) (tableSql string, addConstraintsSql []string, dropConstraintsSql []string, err error) {
-	entityDesc, err := GetTableSqlDescriptionFromEntity[TEntity]()
+func GetUpdateTableQueriesForEntity[TEntity any](db *Database, entity TEntity) (tableSql string, addConstraintsSql []string, dropConstraintsSql []string, err error) {
+	entityDesc, err := GetTableSqlDescriptionFromEntity(entity)
 	if err != nil {
 		return "", nil, nil, err
 	}
@@ -116,7 +124,7 @@ func GetUpdateTableQueries[TEntity any](db *Database) (tableSql string, addConst
 		return tableSql, addConstraintsSql, nil, nil
 	}
 
-	diff, err := GetDescriptionDifferences(entityDesc, dbDesc)
+	diff, err := getDescriptionDifferences(entityDesc, dbDesc)
 	if err != nil {
 		return "", nil, nil, err
 	}
@@ -126,97 +134,20 @@ func GetUpdateTableQueries[TEntity any](db *Database) (tableSql string, addConst
 	return tableSql, addConstraintsSql, dropConstraintsSql, nil
 }
 
-func GetDescriptionDifferences(entityDesc TablDesc, dbDesc TablDesc) (TablDescDiff, error) {
-	diff := TablDescDiff{}
+func GetUpdateTableQueriesForEntities(db *Database, entities ...interface{}) (tableQueries []string, addConstraintsQueries []string, dropConstraintsQueries []string, err error) {
+	tableQueries = []string{}
+	addConstraintsQueries = []string{}
+	dropConstraintsQueries = []string{}
 
-	columnsToAdd, columnsToModify, columnsToDrop, err := GetColumnDifferences(entityDesc.Name, entityDesc.Columns, dbDesc.Columns)
-	if err != nil {
-		return TablDescDiff{}, err
+	for _, e := range entities {
+		tableSql, addConstraintsSql, dropConstraintsSql, err := GetUpdateTableQueriesForEntity(db, e)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		tableQueries = append(tableQueries, tableSql)
+		addConstraintsQueries = append(tableQueries, addConstraintsSql...)
+		dropConstraintsQueries = append(tableQueries, dropConstraintsSql...)
 	}
 
-	diff.ColumnsToAdd = columnsToAdd
-	diff.ColumnsToModify = columnsToModify
-	diff.ColumnsToDrop = columnsToDrop
-
-	constraintsToAdd, constraintsToDrop := GetConstraintDifferences(entityDesc.Constraints, dbDesc.Constraints)
-
-	diff.ConstraintsToAdd = constraintsToAdd
-	diff.ConstraintsToDrop = constraintsToDrop
-
-	return diff, nil
-}
-
-func GetColumnDifferences(tableName string, entityColumns []ColDesc, dbColumns []ColDesc) (add []ColDesc, modify []ColDesc, drop []ColDesc, err error) {
-	add = []ColDesc{}
-	modify = []ColDesc{}
-	drop = []ColDesc{}
-
-	for _, entityCol := range entityColumns {
-		if entityCol.Name == "" {
-			return nil, nil, nil, errors.New("column with empty name provided with entity description")
-		}
-
-		dbCol, ok := helpers.ArrFindFunc(dbColumns, func(dbCol ColDesc) bool {
-			return entityCol.Name == dbCol.Name
-		})
-		if !ok {
-			add = append(add, entityCol)
-		} else {
-			entityColSql := entityCol.Format(tableName)
-			dbColSql := dbCol.Format(tableName)
-
-			if entityColSql != dbColSql {
-				modify = append(modify, entityCol)
-			}
-		}
-	}
-
-	for _, dbCol := range dbColumns {
-		if dbCol.Name == "" {
-			return nil, nil, nil, errors.New("column with empty name provided with db description")
-		}
-
-		_, ok := helpers.ArrFindFunc(entityColumns, func(entityCol ColDesc) bool {
-			return entityCol.Name == dbCol.Name
-		})
-
-		if !ok {
-			drop = append(drop, dbCol)
-		}
-	}
-
-	return add, modify, drop, nil
-}
-
-func GetConstraintDifferences(entityConstraints []Constraint, dbConstraints []Constraint) (add []Constraint, drop []Constraint) {
-	add = []Constraint{}
-	drop = []Constraint{}
-
-	for _, entityConstraint := range entityConstraints {
-		_, ok := helpers.ArrFindFunc(dbConstraints, func(dbConstraint Constraint) bool {
-			return entityConstraint.TableName == dbConstraint.TableName &&
-				entityConstraint.ColumnName == dbConstraint.ColumnName &&
-				entityConstraint.ReferencedTableName == dbConstraint.ReferencedTableName &&
-				entityConstraint.ReferencedColumnName == dbConstraint.ReferencedColumnName
-		})
-
-		if !ok {
-			add = append(add, entityConstraint)
-		}
-	}
-
-	for _, dbConstraint := range dbConstraints {
-		_, ok := helpers.ArrFindFunc(entityConstraints, func(entityConstraint Constraint) bool {
-			return entityConstraint.TableName == dbConstraint.TableName &&
-				entityConstraint.ColumnName == dbConstraint.ColumnName &&
-				entityConstraint.ReferencedTableName == dbConstraint.ReferencedTableName &&
-				entityConstraint.ReferencedColumnName == dbConstraint.ReferencedColumnName
-		})
-
-		if !ok {
-			drop = append(drop, dbConstraint)
-		}
-	}
-
-	return add, drop
+	return tableQueries, addConstraintsQueries, dropConstraintsQueries, nil
 }

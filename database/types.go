@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/AubreeH/goApiDb/helpers"
-	"log"
 	"strings"
 )
 
@@ -55,8 +54,6 @@ func (tabl TablDesc) Format() (string, []string) {
 			constraints = append(constraints, v.Format("add"))
 		}
 	}
-
-	log.Print(constraints)
 
 	return fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", tabl.Name, strings.Join(columns, ", ")), constraints
 }

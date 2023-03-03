@@ -158,3 +158,33 @@ func getTableDescription(db *sql.DB, tableName string) (helpers.TableDescription
 
 	return tableDescription, false, nil
 }
+
+func BuildTables(db *Database, entities ...interface{}) error {
+	tableQueries, addConstraintsQueries, dropConstraintsQueries, err := GetUpdateTableQueriesForEntities(db, entities...)
+	if err != nil {
+		return err
+	}
+
+	for _, query := range dropConstraintsQueries {
+		_, err = db.Db.Exec(query)
+		if err != nil {
+			return err
+		}
+	}
+
+	for _, query := range tableQueries {
+		_, err = db.Db.Exec(query)
+		if err != nil {
+			return err
+		}
+	}
+
+	for _, query := range addConstraintsQueries {
+		_, err = db.Db.Exec(query)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}

@@ -37,7 +37,7 @@ func SetupDatabase(config DatabaseConfig) (*Database, error) {
 
 	output := &Database{Db: db, dbName: config.Name, tableColumns: make(map[string][]string)}
 
-	SetupTableVariables(output)
+	setupTableVariables(output)
 
 	return output, nil
 }
@@ -61,7 +61,7 @@ func getConnectionString(config DatabaseConfig) string {
 	return account + "@tcp(" + url + ")/" + config.Name + "?parseTime=true"
 }
 
-func SetupTableVariables(database *Database) {
+func setupTableVariables(database *Database) {
 	if database.tableColumns == nil {
 		database.tableColumns = make(map[string][]string)
 	}

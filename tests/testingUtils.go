@@ -3,10 +3,13 @@ package tests
 import (
 	"fmt"
 	"github.com/AubreeH/goApiDb/database"
+	"github.com/AubreeH/goApiDb/entities"
 	"github.com/AubreeH/goApiDb/helpers"
 	"github.com/joho/godotenv"
 	"math/rand"
 	"os"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -89,6 +92,19 @@ func setupTable(entity interface{}) (func(), error) {
 	}
 
 	return closeFunc, database.BuildTable(db, entity, false, true)
+}
+
+func dropTable[T any]() error {
+	var entity T
+	tableInfo, err := entities.GetTableInfo(entity)
+	if err != nil {
+		return err
+	}
+	_, err = db.Db.Exec("DROP TABLE " + tableInfo.Name)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func seedTable(count int, table string, columns map[string]string) (map[int64]map[string]any, error) {
@@ -192,5 +208,14 @@ func assert(t *testing.T, conditions ...c) {
 }
 
 func assertError(t *testing.T, err error) {
-	assert(t, condition(err != nil, err))
+	_, file, line, _ := runtime.Caller(1)
+	assert(t, condition(err != nil, fmt.Sprintf("Error in %s on line %d: ", file, line), err))
+
+}
+
+func p(args ...any) {
+	_, file, line, _ := runtime.Caller(1)
+	output := []any{fmt.Sprintf("%s:%d: ", filepath.Base(file), line)}
+	output = append(output, args...)
+	fmt.Print(output...)
 }
