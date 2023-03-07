@@ -2,7 +2,7 @@ package access
 
 import (
 	"github.com/AubreeH/goApiDb/database"
-	"github.com/AubreeH/goApiDb/helpers"
+	"github.com/AubreeH/goApiDb/entities"
 	"reflect"
 )
 
@@ -13,7 +13,10 @@ func Delete[T any](db *database.Database, entity T, id any) error {
 		return err
 	}
 
-	tableName := helpers.GetTableName(entity)
+	tableInfo, err := entities.GetTableInfo(entity)
+	if err != nil {
+		return err
+	}
 
 	if DoesEntitySoftDelete(entity) {
 		return softDelete(db, entity, id)
@@ -23,7 +26,7 @@ func Delete[T any](db *database.Database, entity T, id any) error {
 			return err
 		}
 
-		q := "DELETE FROM " + tableName + " WHERE ID = ?"
+		q := "DELETE FROM " + tableInfo.Name + " WHERE ID = ?"
 
 		_, err = db.Db.Exec(q, id)
 		return err

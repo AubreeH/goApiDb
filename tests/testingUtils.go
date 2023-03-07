@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/AubreeH/goApiDb/database"
 	"github.com/AubreeH/goApiDb/entities"
-	"github.com/AubreeH/goApiDb/helpers"
 	"github.com/joho/godotenv"
 	"math/rand"
 	"os"
@@ -81,17 +80,23 @@ func createDatabaseRow(db *database.Database, table string, data map[string]any)
 	return lastInsertId, err
 }
 
-func setupTable(entity interface{}) (func(), error) {
+func setupTables(ent ...interface{}) (func(), error) {
 	closeFunc := func() {
-		tableName := helpers.GetTableName(entity)
-		_, err := db.Db.Exec("DROP TABLE " + tableName)
+		var err error
+		for _, e := range ent {
+			var tableInfo entities.TableInfo
+			tableInfo, err = entities.GetTableInfo(e)
+			if err == nil {
+				_, err = db.Db.Exec("DROP TABLE " + tableInfo.Name)
+			}
+		}
 		if err != nil {
 			panic(err)
 		}
 		return
 	}
 
-	return closeFunc, database.BuildTable(db, entity, false, true)
+	return closeFunc, database.BuildTables(db, ent...)
 }
 
 func dropTable[T any]() error {

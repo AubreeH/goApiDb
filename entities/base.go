@@ -2,6 +2,7 @@ package entities
 
 import (
 	"errors"
+	"github.com/AubreeH/goApiDb/helpers"
 	"reflect"
 )
 
@@ -34,6 +35,9 @@ func GetTableInfo(entity interface{}) (TableInfo, error) {
 		field := entityType.Field(i)
 		if field.Type == entityBaseType {
 			tableInfo := TableInfo{Name: field.Tag.Get("table_name")}
+			if tableInfo.Name == "" {
+				tableInfo.Name = helpers.GetTableName(entity)
+			}
 			return tableInfo, nil
 		}
 	}

@@ -2,16 +2,19 @@ package access
 
 import (
 	"github.com/AubreeH/goApiDb/database"
-	"github.com/AubreeH/goApiDb/helpers"
+	"github.com/AubreeH/goApiDb/entities"
 	"reflect"
 )
 
 func GetAll[T any](db *database.Database, entity T, limit int) ([]T, error) {
-	tableName := helpers.GetTableName(entity)
+	tableInfo, err := entities.GetTableInfo(entity)
+	if err != nil {
+		return nil, err
+	}
 
 	var args []any
 
-	query := "SELECT * FROM " + tableName
+	query := "SELECT * FROM " + tableInfo.Name
 
 	if DoesEntitySoftDelete(entity) {
 		query += " WHERE deleted = false"

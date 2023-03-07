@@ -2,6 +2,7 @@ package database
 
 import (
 	"database/sql"
+	"github.com/AubreeH/goApiDb/entities"
 	"github.com/AubreeH/goApiDb/helpers"
 	_ "github.com/go-sql-driver/mysql"
 	"reflect"
@@ -67,7 +68,7 @@ func setupTableVariables(database *Database) {
 	}
 }
 
-func getEntityConstruction[T any](entity *T) (map[string]any, T, string) {
+func getEntityConstruction[T any](entity *T) (map[string]any, T, string, error) {
 	val := reflect.ValueOf(entity).Elem()
 
 	tmp := reflect.New(val.Elem().Type()).Elem()
@@ -75,9 +76,15 @@ func getEntityConstruction[T any](entity *T) (map[string]any, T, string) {
 
 	columnVariables := make(map[string]any)
 	getColumnsFromStruct(tmp, columnVariables)
-	tableName := helpers.GetTableName(reflect.ValueOf(entity).Elem().Interface())
 
-	return columnVariables, tmp.Addr().Interface().(T), tableName
+	currentValue := reflect.ValueOf(entity).Elem().Interface()
+	tableInfo, err := entities.GetTableInfo(currentValue)
+	if err != nil {
+		var output T
+		return nil, output, "", err
+	}
+
+	return columnVariables, tmp.Addr().Interface().(T), tableInfo.Name, nil
 }
 
 func getColumnsFromStruct(refValue reflect.Value, columnVariables map[string]any) map[string]any {
@@ -104,7 +111,10 @@ func getColumnsFromStruct(refValue reflect.Value, columnVariables map[string]any
 }
 
 func BuildRow(db *Database, entity interface{}, result *sql.Rows) ([]interface{}, interface{}, error) {
-	columnVariables, ptr, tableName := getEntityConstruction(&entity)
+	columnVariables, ptr, tableName, err := getEntityConstruction(&entity)
+	if err != nil {
+		return nil, ptr, err
+	}
 
 	var columns []string
 	if db.tableColumns[tableName] != nil {
