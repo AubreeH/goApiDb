@@ -7,7 +7,9 @@ import (
 )
 
 func Test_GetById_Success(t *testing.T) {
-	closeFunc, err := setupTable(testingEntity{})
+	InitDb()
+
+	closeFunc, err := setupTables(testingEntity1{}, testingEntity2{})
 	assert(t, condition(err != nil, err))
 	defer closeFunc()
 
@@ -15,7 +17,7 @@ func Test_GetById_Success(t *testing.T) {
 	assert(t, condition(err != nil, err))
 
 	start := time.Now()
-	entity, err := access.GetById(db, testingEntity{}, testEntity.Id)
+	entity, err := access.GetById(db, testingEntity1{}, testEntity.Id)
 	end := time.Now()
 	assert(t, condition(err != nil, err))
 
@@ -29,7 +31,9 @@ func Test_GetById_Success(t *testing.T) {
 }
 
 func Test_GetById_InvalidId(t *testing.T) {
-	closeFunc, err := setupTable(testingEntity{})
+	InitDb()
+
+	closeFunc, err := setupTables(testingEntity1{}, testingEntity2{})
 	assert(t, condition(err != nil, err))
 	defer closeFunc()
 
@@ -37,7 +41,7 @@ func Test_GetById_InvalidId(t *testing.T) {
 	assert(t, condition(err != nil, err))
 
 	start := time.Now()
-	entity, err := access.GetById(db, testingEntity{}, "abc")
+	entity, err := access.GetById(db, testingEntity1{}, "abc")
 	end := time.Now()
 	assert(t, condition(err != nil && err.Error() != "unable to find value", err.Error()))
 
@@ -52,7 +56,9 @@ func Test_GetById_InvalidId(t *testing.T) {
 }
 
 func Test_GetAll_Success(t *testing.T) {
-	closeFunc, err := setupTable(testingEntity{})
+	InitDb()
+
+	closeFunc, err := setupTables(testingEntity1{}, testingEntity2{})
 	assert(t, condition(err != nil, err))
 	defer closeFunc()
 
@@ -60,7 +66,7 @@ func Test_GetAll_Success(t *testing.T) {
 	assert(t, condition(err != nil, err))
 
 	start := time.Now()
-	results, err := access.GetAll(db, testingEntity{}, 0)
+	results, err := access.GetAll(db, testingEntity1{}, 0)
 	end := time.Now()
 	assert(t, condition(err != nil, err))
 

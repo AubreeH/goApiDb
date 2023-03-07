@@ -3,10 +3,12 @@ package tests
 import (
 	"fmt"
 	"github.com/AubreeH/goApiDb/database"
-	"github.com/AubreeH/goApiDb/helpers"
+	"github.com/AubreeH/goApiDb/entities"
 	"github.com/joho/godotenv"
 	"math/rand"
 	"os"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -17,7 +19,14 @@ var db *database.Database
 func init() {
 	rand.Seed(time.Now().UnixNano())
 	err := godotenv.Load("../.env")
+	if err != nil {
+		panic(err)
+	}
+}
+
+func InitDb() {
 	conf := getDatabaseConfig()
+	var err error
 	db, err = database.SetupDatabase(conf)
 	if err != nil {
 		panic(err)
@@ -71,17 +80,36 @@ func createDatabaseRow(db *database.Database, table string, data map[string]any)
 	return lastInsertId, err
 }
 
-func setupTable(entity interface{}) (func(), error) {
+func setupTables(ent ...interface{}) (func(), error) {
 	closeFunc := func() {
-		tableName := helpers.GetTableName(entity)
-		_, err := db.Db.Exec("DROP TABLE " + tableName)
+		var err error
+		for _, e := range ent {
+			var tableInfo entities.TableInfo
+			tableInfo, err = entities.GetTableInfo(e)
+			if err == nil {
+				_, err = db.Db.Exec("DROP TABLE " + tableInfo.Name)
+			}
+		}
 		if err != nil {
 			panic(err)
 		}
 		return
 	}
 
-	return closeFunc, database.BuildTable(db, entity, false)
+	return closeFunc, database.BuildTables(db, ent...)
+}
+
+func dropTable[T any]() error {
+	var entity T
+	tableInfo, err := entities.GetTableInfo(entity)
+	if err != nil {
+		return err
+	}
+	_, err = db.Db.Exec("DROP TABLE " + tableInfo.Name)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func seedTable(count int, table string, columns map[string]string) (map[int64]map[string]any, error) {
@@ -182,4 +210,17 @@ func assert(t *testing.T, conditions ...c) {
 	if fail {
 		t.FailNow()
 	}
+}
+
+func assertError(t *testing.T, err error) {
+	_, file, line, _ := runtime.Caller(1)
+	assert(t, condition(err != nil, fmt.Sprintf("Error in %s on line %d: ", file, line), err))
+
+}
+
+func p(args ...any) {
+	_, file, line, _ := runtime.Caller(1)
+	output := []any{fmt.Sprintf("%s:%d: ", filepath.Base(file), line)}
+	output = append(output, args...)
+	fmt.Print(output...)
 }

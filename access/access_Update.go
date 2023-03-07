@@ -2,7 +2,7 @@ package access
 
 import (
 	"github.com/AubreeH/goApiDb/database"
-	"github.com/AubreeH/goApiDb/helpers"
+	"github.com/AubreeH/goApiDb/entities"
 )
 
 func Update[T any](db *database.Database, value T, id any) error {
@@ -27,9 +27,12 @@ func update[T any](db *database.Database, value T, id any, operationHandler Oper
 		return err
 	}
 
-	tableName := helpers.GetTableName(value)
+	tableInfo, err := entities.GetTableInfo(value)
+	if err != nil {
+		return err
+	}
 
-	q := "UPDATE " + tableName + " t SET "
+	q := "UPDATE " + tableInfo.Name + " t SET "
 	qBase := q
 	var where string
 

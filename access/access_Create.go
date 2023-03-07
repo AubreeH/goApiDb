@@ -3,12 +3,12 @@ package access
 import (
 	"fmt"
 	"github.com/AubreeH/goApiDb/database"
-	"github.com/AubreeH/goApiDb/helpers"
+	"github.com/AubreeH/goApiDb/entities"
 )
 
 func Create[T any](db *database.Database, values []T) (T, error) {
 	var entity T
-	tableName := helpers.GetTableName(entity)
+	tableInfo, err := entities.GetTableInfo(entity)
 
 	queryColumns := ""
 	queryValues := ""
@@ -17,7 +17,8 @@ func Create[T any](db *database.Database, values []T) (T, error) {
 	var output T
 	var id any
 	for i := range values {
-		rowData, err := GetData(values[i], CreateOperationHandler)
+		var rowData []ColumnData
+		rowData, err = GetData(values[i], CreateOperationHandler)
 		if err != nil {
 			return output, err
 		}
@@ -41,7 +42,7 @@ func Create[T any](db *database.Database, values []T) (T, error) {
 		}
 	}
 
-	query := fmt.Sprintf("INSERT"+" INTO %s (%s) values (%s)", tableName, queryColumns, queryValues)
+	query := fmt.Sprintf("INSERT"+" INTO %s (%s) values (%s)", tableInfo.Name, queryColumns, queryValues)
 
 	res, err := db.Db.Exec(query, args...)
 	if err != nil {

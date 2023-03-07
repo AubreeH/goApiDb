@@ -3,18 +3,23 @@ package access
 import (
 	"errors"
 	"github.com/AubreeH/goApiDb/database"
-	"github.com/AubreeH/goApiDb/helpers"
+	"github.com/AubreeH/goApiDb/entities"
 	"reflect"
 )
 
 func GetById[T any](db *database.Database, entity T, id any) (T, error) {
-	tableName := helpers.GetTableName(entity)
+	var output T
+
+	tableInfo, err := entities.GetTableInfo(entity)
+	if err != nil {
+		return output, err
+	}
 
 	var query string
 	if DoesEntitySoftDelete(entity) {
-		query = "SELECT *" + " FROM " + tableName + " WHERE deleted = false AND id = ? LIMIT 1"
+		query = "SELECT *" + " FROM " + tableInfo.Name + " WHERE deleted = false AND id = ? LIMIT 1"
 	} else {
-		query = "SELECT *" + " FROM " + tableName + " WHERE id = ? LIMIT 1"
+		query = "SELECT *" + " FROM " + tableInfo.Name + " WHERE id = ? LIMIT 1"
 	}
 
 	result, err := db.Db.Query(query, id)

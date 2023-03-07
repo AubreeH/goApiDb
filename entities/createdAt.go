@@ -6,12 +6,11 @@ import (
 )
 
 type CreatedAt struct {
-	CreatedAt dataTypes.Time `json:"created_at" sql_name:"created_at" sql_type:"DATETIME" sql_nullable:"false" parse_struct:"false" sql_disallow_external_modification:"true"`
+	CreatedAt dataTypes.Time `json:"created_at"`
 }
 
-func (val CreatedAt) OnCreate() (CreatedAt, error) {
-	val.CreatedAt = dataTypes.Time{Time: time.Now()}
-	return val, nil
+func (CreatedAt) Describe() {
+
 }
 
 func (_ CreatedAt) GetPtrFunc(value *CreatedAt) *time.Time {
