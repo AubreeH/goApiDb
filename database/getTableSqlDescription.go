@@ -48,7 +48,7 @@ func GetTableSqlDescriptionFromEntity[TEntity interface{}](entity TEntity) (Tabl
 
 	for i := 0; i < refValue.NumField(); i++ {
 		field := refValue.Type().Field(i)
-		if field.Type != reflect.TypeOf(entities.EntityBase{}) {
+		if field.Type != reflect.TypeOf(entities.EntityBase{}) && !helpers.ParseBool(field.Tag.Get("sql_ignore")) {
 			colDesc := parseColumn(field)
 			tableDescription.Columns = append(tableDescription.Columns, colDesc)
 			tableDescription.Constraints = append(tableDescription.Constraints, colDesc.GetConstraints(tableDescription.Name)...)
@@ -145,8 +145,8 @@ func GetUpdateTableQueriesForEntities(db *Database, entities ...interface{}) (ta
 			return nil, nil, nil, err
 		}
 		tableQueries = append(tableQueries, tableSql)
-		addConstraintsQueries = append(tableQueries, addConstraintsSql...)
-		dropConstraintsQueries = append(tableQueries, dropConstraintsSql...)
+		addConstraintsQueries = append(addConstraintsQueries, addConstraintsSql...)
+		dropConstraintsQueries = append(dropConstraintsQueries, dropConstraintsSql...)
 	}
 
 	return tableQueries, addConstraintsQueries, dropConstraintsQueries, nil
