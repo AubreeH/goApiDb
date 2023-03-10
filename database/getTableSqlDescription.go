@@ -110,6 +110,9 @@ func parseColumn(structField reflect.StructField) ColDesc {
 
 	var output string
 	helpers.TagLookup(structField, tagSqlDisallowExternalModification, &output)
+	if output == "" && formatKey(desc.Key) == "PRIMARY KEY" {
+		output = "true"
+	}
 	desc.DisallowExternalModification = helpers.ParseBool(output)
 
 	if desc.Name == "" {
