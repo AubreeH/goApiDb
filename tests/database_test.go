@@ -74,3 +74,10 @@ func Test_BuildTables(t *testing.T) {
 	err = dropTable[testingEntity2]()
 	assertError(t, err)
 }
+
+func Test_RunMigrations(t *testing.T) {
+	InitDb()
+
+	err := database.RunMigrations(db, "./testMigrations/")
+	assertError(t, err)
+}
