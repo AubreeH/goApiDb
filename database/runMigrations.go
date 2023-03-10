@@ -3,7 +3,6 @@ package database
 import (
 	"bufio"
 	"io/fs"
-	"log"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -56,7 +55,6 @@ func runMigrations(db *Database, dir string) error {
 				q += " " + text
 				if strings.Contains(text, ";") {
 					_, err = db.Db.Exec(q)
-					log.Print(q)
 					if err != nil {
 						return err
 					}
