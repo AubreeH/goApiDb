@@ -11,6 +11,7 @@ type testingEntity1 struct {
 	Name                string        `json:"name" sql_name:"name" sql_type:"VARCHAR(256)" sql_nullable:"NO"`
 	Description         string        `json:"description" sql_name:"description" sql_type:"VARCHAR(256)" sql_nullable:"NO"`
 	TestEntity2Id       sql.NullInt64 `json:"test_entity_2_id" sql_name:"test_entity_2_id" sql_type:"int(64)" sql_nullable:"true" sql_key:"foreign,test_entity_2,id" parse_struct:"false"`
+	entities.UpdatedAt
 }
 
 type testingEntity2 struct {
@@ -18,6 +19,8 @@ type testingEntity2 struct {
 	Id                  int64  `json:"id" sql_name:"id" sql_type:"int(64)" sql_key:"PRIMARY" sql_extras:"AUTO_INCREMENT" sql_nullable:"NO" sql_disallow_external_modification:"true"`
 	Name                string `json:"name" sql_name:"name" sql_type:"VARCHAR(256)" sql_nullable:"NO"`
 	Description         string `json:"description" sql_name:"description" sql_type:"VARCHAR(256)" sql_nullable:"NO"`
+	entities.CreatedAt
+	entities.UpdatedAt
 }
 
 func setupGetById() (output testingEntity1, err error) {

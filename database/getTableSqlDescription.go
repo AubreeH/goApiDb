@@ -46,16 +46,24 @@ func GetTableSqlDescriptionFromEntity[TEntity interface{}](entity TEntity) (Tabl
 
 	tableDescription.Name = tableInfo.Name
 
+	parseColumns(&tableDescription, refValue)
+
+	return tableDescription, nil
+}
+
+func parseColumns(tableDescription *TablDesc, refValue reflect.Value) {
 	for i := 0; i < refValue.NumField(); i++ {
 		field := refValue.Type().Field(i)
 		if field.Type != reflect.TypeOf(entities.EntityBase{}) && !helpers.ParseBool(field.Tag.Get("sql_ignore")) {
-			colDesc := parseColumn(field)
-			tableDescription.Columns = append(tableDescription.Columns, colDesc)
-			tableDescription.Constraints = append(tableDescription.Constraints, colDesc.GetConstraints(tableDescription.Name)...)
+			if field.Type.Kind() == reflect.Struct && (field.Tag.Get("parse_struct") == "" || helpers.ParseBool(field.Tag.Get("parse_struct"))) {
+				parseColumns(tableDescription, refValue.Field(i))
+			} else {
+				colDesc := parseColumn(field)
+				tableDescription.Columns = append(tableDescription.Columns, colDesc)
+				tableDescription.Constraints = append(tableDescription.Constraints, colDesc.GetConstraints(tableDescription.Name)...)
+			}
 		}
 	}
-
-	return tableDescription, nil
 }
 
 func GetTableSqlDescriptionFromDb(db *Database, tableName string) (TablDesc, error) {
@@ -103,6 +111,10 @@ func parseColumn(structField reflect.StructField) ColDesc {
 	var output string
 	helpers.TagLookup(structField, tagSqlDisallowExternalModification, &output)
 	desc.DisallowExternalModification = helpers.ParseBool(output)
+
+	if desc.Name == "" {
+		desc.Name = helpers.PascalToSnakeCase(structField.Name)
+	}
 
 	return desc
 }

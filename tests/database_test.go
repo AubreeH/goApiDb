@@ -11,6 +11,8 @@ func Test_GetTableSqlDescription(t *testing.T) {
 	tableSql, constraintsToAdd, constraintsToDrop, err := database.GetUpdateTableQueriesForEntity(db, testingEntity2{})
 	assertError(t, err)
 
+	p(tableSql)
+
 	for _, constraint := range constraintsToDrop {
 		_, err = db.Db.Exec(constraint)
 		assertError(t, err)
@@ -28,7 +30,7 @@ func Test_GetTableSqlDescription(t *testing.T) {
 		assertError(t, err)
 	}
 
-	err = dropTable[testingEntity2]()
+	//err = dropTable[testingEntity2]()
 	assertError(t, err)
 }
 
