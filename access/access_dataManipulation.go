@@ -75,6 +75,7 @@ func extractData(refValue reflect.Value, operationHandler OperationHandler) ([]C
 			continue
 		}
 
+		// TODO: Allow for case when sql_name is not defined
 		sqlName := fieldType.Tag.Get("sql_name")
 		nullable := helpers.ParseBool(fieldType.Tag.Get("sql_nullable"))
 		primaryKey := strings.ToLower(fieldType.Tag.Get("sql_key")) == "primary"
@@ -86,6 +87,7 @@ func extractData(refValue reflect.Value, operationHandler OperationHandler) ([]C
 			fieldData = field.Interface()
 		}
 
+		// TODO: Fix prioritise existing field
 		if primaryKey && hasDefault {
 			data = append(data, ColumnData{Column: sqlName, PrimaryKey: primaryKey, Data: nil, PrioritiseExisting: !nullable})
 		} else {
