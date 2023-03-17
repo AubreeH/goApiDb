@@ -1,19 +1,44 @@
 package access
 
-import "reflect"
+import (
+	"fmt"
+	"reflect"
+)
 
-func CreateOperationHandler(refValue reflect.Value) (reflect.Value, error) {
+// createOperationHandler runs the OnDelete function for the provided value. This is used prior to Create operations.
+func createOperationHandler(refValue reflect.Value) (value reflect.Value, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("an error occurred whilst running the onCreate operation handler:%v", r.(error))
+		}
+	}()
+
 	return callMethodIfExists("OnCreate", refValue)
 }
 
-func UpdateOperationHandler(refValue reflect.Value) (reflect.Value, error) {
+// updateOperationHandler runs the OnDelete function for the provided value. This is used prior to Update operations.
+func updateOperationHandler(refValue reflect.Value) (value reflect.Value, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("an error occurred whilst running the onCreate operation handler:%v", r.(error))
+		}
+	}()
+
 	return callMethodIfExists("OnUpdate", refValue)
 }
 
-func DeleteOperationHandler(refValue reflect.Value) (reflect.Value, error) {
+// deleteOperationHandler runs the OnDelete function for the provided value. This is used prior to Delete operations.
+func deleteOperationHandler(refValue reflect.Value) (value reflect.Value, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("an error occurred whilst running the onCreate operation handler:%v", r.(error))
+		}
+	}()
+
 	return callMethodIfExists("OnDelete", refValue)
 }
 
-func NonOperationHandler(refValue reflect.Value) (reflect.Value, error) {
+// nilOperationHandler is used to extract data without updating the original values.
+func nilOperationHandler(refValue reflect.Value) (reflect.Value, error) {
 	return refValue, nil
 }

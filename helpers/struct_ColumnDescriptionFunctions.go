@@ -1,7 +1,7 @@
 package helpers
 
 import (
-	"log"
+	"fmt"
 	"regexp"
 )
 
@@ -58,8 +58,8 @@ func (description ColumnDescription) FormatSqlConstraints(tableName string) []st
 
 	submatch := re.FindStringSubmatch(description.Key)
 	if len(submatch) > 1 {
-		constraint := "ALTER TABLE " + tableName + " ADD FOREIGN KEY (" + description.Field + ") REFERENCES " + submatch[1] + "(" + submatch[2] + ")"
-		log.Print(constraint)
+		constraint := fmt.Sprintf("ALTER TABLE %s ADD FOREIGN KEY (%s) REFERENCES %s(%s)", tableName, description.Field, submatch[1], submatch[2])
+		output = append(output, constraint)
 	}
 
 	return output

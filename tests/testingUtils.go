@@ -3,7 +3,7 @@ package tests
 import (
 	"fmt"
 	"github.com/AubreeH/goApiDb/database"
-	"github.com/AubreeH/goApiDb/entities"
+	"github.com/AubreeH/goApiDb/structParsing"
 	"github.com/joho/godotenv"
 	"math/rand"
 	"os"
@@ -31,6 +31,10 @@ func InitDb() {
 	if err != nil {
 		panic(err)
 	}
+	err = db.Db.Ping()
+	if err != nil {
+		panic(err)
+	}
 }
 
 var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
@@ -43,8 +47,8 @@ func randSeq(n int) string {
 	return string(b)
 }
 
-func getDatabaseConfig() database.DatabaseConfig {
-	return database.DatabaseConfig{
+func getDatabaseConfig() database.Config {
+	return database.Config{
 		Host:     os.Getenv("DB_HOST"),
 		Port:     os.Getenv("DB_PORT"),
 		User:     os.Getenv("DB_USER"),
@@ -84,8 +88,7 @@ func setupTables(ent ...interface{}) (func(), error) {
 	closeFunc := func() {
 		var err error
 		for _, e := range ent {
-			var tableInfo entities.TableInfo
-			tableInfo, err = entities.GetTableInfo(e)
+			tableInfo, err := structParsing.GetTableInfo(e)
 			if err == nil {
 				_, err = db.Db.Exec("DROP TABLE " + tableInfo.Name)
 			}
@@ -101,7 +104,7 @@ func setupTables(ent ...interface{}) (func(), error) {
 
 func dropTable[T any]() error {
 	var entity T
-	tableInfo, err := entities.GetTableInfo(entity)
+	tableInfo, err := structParsing.GetTableInfo(entity)
 	if err != nil {
 		return err
 	}
@@ -143,6 +146,10 @@ func seedTable(count int, table string, columns map[string]string) (map[int64]ma
 				break
 			case "date":
 				arg = time.UnixMilli(rand.Int63n(time.Now().UnixMilli()))
+				break
+			case "time":
+				arg = time.Now()
+				break
 			}
 			args = append(args, arg)
 			seededValues[int64(i+1)][columnNames[k]] = arg
@@ -203,7 +210,10 @@ func assert(t *testing.T, conditions ...c) {
 	for _, v := range conditions {
 		if v.Condition {
 			fail = true
-			t.Error(v.Args...)
+			_, file, line, _ := runtime.Caller(1)
+			output := []any{fmt.Sprintf("%s:%d: ", filepath.Base(file), line)}
+			output = append(output, v.Args...)
+			t.Error(output...)
 		}
 	}
 

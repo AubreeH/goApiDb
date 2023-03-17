@@ -1,7 +1,7 @@
 package access
 
 import (
-	"github.com/AubreeH/goApiDb/helpers"
+	"github.com/AubreeH/goApiDb/structParsing"
 	"reflect"
 )
 
@@ -28,12 +28,12 @@ func mergeRefValues(base reflect.Value, merger reflect.Value) reflect.Value {
 		baseFieldType := base.Type().Field(i)
 		mergerField := merger.Field(i)
 
-		blockExternalMod := baseFieldType.Tag.Get("sql_disallow_external_modification")
-		if helpers.ParseBool(blockExternalMod) {
+		blockExternalMod := structParsing.FormatBoolean(baseFieldType.Tag.Get(structParsing.SqlDisallowExternalModification))
+		if blockExternalMod == 1 {
 			continue
 		} else {
-			parseStruct := baseFieldType.Tag.Get("parse_struct")
-			if baseField.Kind() == reflect.Struct && (parseStruct == "" || helpers.ParseBool(parseStruct)) {
+			parseStruct := structParsing.FormatBoolean(baseFieldType.Tag.Get(structParsing.ParseStruct))
+			if baseField.Kind() == reflect.Struct && (parseStruct != 0) {
 				baseField.Set(mergeRefValues(baseField, mergerField))
 			} else {
 				baseField.Set(mergerField)
@@ -43,7 +43,7 @@ func mergeRefValues(base reflect.Value, merger reflect.Value) reflect.Value {
 	return base
 }
 
-func DoesEntitySoftDelete(entity any) bool {
+func doesEntitySoftDelete(entity any) bool {
 	refValue := reflect.ValueOf(entity)
 
 	if refValue.Kind() == reflect.Struct {
@@ -51,12 +51,11 @@ func DoesEntitySoftDelete(entity any) bool {
 			fieldValue := refValue.Field(i)
 			fieldType := refValue.Type().Field(i)
 
-			if helpers.ParseBool(fieldType.Tag.Get("soft_deletes")) {
+			if structParsing.FormatBoolean(fieldType.Tag.Get(structParsing.SoftDeletes)) == 1 {
 				return true
 			}
-
-			if fieldValue.Type().Kind() == reflect.Struct && fieldType.Tag.Get("parse_struct") != "false" {
-				if DoesEntitySoftDelete(fieldValue.Interface()) {
+			if fieldValue.Type().Kind() == reflect.Struct && structParsing.FormatParseStruct(fieldType) {
+				if doesEntitySoftDelete(fieldValue.Interface()) {
 					return true
 				}
 			}

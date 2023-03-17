@@ -2,24 +2,25 @@ package access
 
 import (
 	"errors"
+	"fmt"
 	"github.com/AubreeH/goApiDb/database"
-	"github.com/AubreeH/goApiDb/entities"
+	"github.com/AubreeH/goApiDb/structParsing"
 	"reflect"
 )
 
 func GetById[T any](db *database.Database, entity T, id any) (T, error) {
 	var output T
 
-	tableInfo, err := entities.GetTableInfo(entity)
+	tableInfo, err := structParsing.GetTableInfo(entity)
 	if err != nil {
 		return output, err
 	}
 
 	var query string
-	if DoesEntitySoftDelete(entity) {
-		query = "SELECT *" + " FROM " + tableInfo.Name + " WHERE deleted = false AND id = ? LIMIT 1"
+	if tableInfo.SoftDeletes != "" {
+		query = fmt.Sprintf("SELECT * FROM %s WHERE %s IS NULL AND id = ? LIMIT 1", tableInfo.Name, tableInfo.SoftDeletes)
 	} else {
-		query = "SELECT *" + " FROM " + tableInfo.Name + " WHERE id = ? LIMIT 1"
+		query = fmt.Sprintf("SELECT *  FROM %s WHERE id = ? LIMIT 1", tableInfo.Name)
 	}
 
 	result, err := db.Db.Query(query, id)

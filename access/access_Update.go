@@ -2,11 +2,11 @@ package access
 
 import (
 	"github.com/AubreeH/goApiDb/database"
-	"github.com/AubreeH/goApiDb/entities"
+	"github.com/AubreeH/goApiDb/structParsing"
 )
 
 func Update[T any](db *database.Database, value T, id any) error {
-	return update(db, value, id, UpdateOperationHandler)
+	return update(db, value, id, updateOperationHandler)
 }
 
 func update[T any](db *database.Database, value T, id any, operationHandler OperationHandler) error {
@@ -22,12 +22,12 @@ func update[T any](db *database.Database, value T, id any, operationHandler Oper
 	if err != nil {
 		return err
 	}
-	_, updateData, err := GetDataAndId(value, NonOperationHandler)
+	_, updateData, err := GetDataAndId(value, nilOperationHandler)
 	if err != nil {
 		return err
 	}
 
-	tableInfo, err := entities.GetTableInfo(value)
+	tableInfo, err := structParsing.GetTableInfo(value)
 	if err != nil {
 		return err
 	}
@@ -36,7 +36,7 @@ func update[T any](db *database.Database, value T, id any, operationHandler Oper
 	qBase := q
 	var where string
 
-	if DoesEntitySoftDelete(value) {
+	if doesEntitySoftDelete(value) {
 		where = " WHERE deleted = false AND t."
 	} else {
 		where = " WHERE t."

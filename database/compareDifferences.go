@@ -3,9 +3,10 @@ package database
 import (
 	"errors"
 	"github.com/AubreeH/goApiDb/helpers"
+	"github.com/AubreeH/goApiDb/structParsing"
 )
 
-func getDescriptionDifferences(entityDesc TablDesc, dbDesc TablDesc) (TablDescDiff, error) {
+func getDescriptionDifferences(entityDesc structParsing.TablDesc, dbDesc structParsing.TablDesc) (TablDescDiff, error) {
 	diff := TablDescDiff{}
 
 	diff.Name = entityDesc.Name
@@ -27,17 +28,17 @@ func getDescriptionDifferences(entityDesc TablDesc, dbDesc TablDesc) (TablDescDi
 	return diff, nil
 }
 
-func getColumnDifferences(tableName string, entityColumns []ColDesc, dbColumns []ColDesc) (add []ColDesc, modify []ColDesc, drop []ColDesc, err error) {
-	add = []ColDesc{}
-	modify = []ColDesc{}
-	drop = []ColDesc{}
+func getColumnDifferences(tableName string, entityColumns []structParsing.ColDesc, dbColumns []structParsing.ColDesc) (add []structParsing.ColDesc, modify []structParsing.ColDesc, drop []structParsing.ColDesc, err error) {
+	add = []structParsing.ColDesc{}
+	modify = []structParsing.ColDesc{}
+	drop = []structParsing.ColDesc{}
 
 	for _, entityCol := range entityColumns {
 		if entityCol.Name == "" {
 			return nil, nil, nil, errors.New("column with empty name provided with entity description")
 		}
 
-		dbCol, ok := helpers.ArrFindFunc(dbColumns, func(dbCol ColDesc) bool {
+		dbCol, ok := helpers.ArrFindFunc(dbColumns, func(dbCol structParsing.ColDesc) bool {
 			return entityCol.Name == dbCol.Name
 		})
 		if !ok {
@@ -57,7 +58,7 @@ func getColumnDifferences(tableName string, entityColumns []ColDesc, dbColumns [
 			return nil, nil, nil, errors.New("column with empty name provided with db description")
 		}
 
-		_, ok := helpers.ArrFindFunc(entityColumns, func(entityCol ColDesc) bool {
+		_, ok := helpers.ArrFindFunc(entityColumns, func(entityCol structParsing.ColDesc) bool {
 			return entityCol.Name == dbCol.Name
 		})
 
@@ -69,12 +70,12 @@ func getColumnDifferences(tableName string, entityColumns []ColDesc, dbColumns [
 	return add, modify, drop, nil
 }
 
-func getConstraintDifferences(entityConstraints []Constraint, dbConstraints []Constraint) (add []Constraint, drop []Constraint) {
-	add = []Constraint{}
-	drop = []Constraint{}
+func getConstraintDifferences(entityConstraints []structParsing.Constraint, dbConstraints []structParsing.Constraint) (add []structParsing.Constraint, drop []structParsing.Constraint) {
+	add = []structParsing.Constraint{}
+	drop = []structParsing.Constraint{}
 
 	for _, entityConstraint := range entityConstraints {
-		_, ok := helpers.ArrFindFunc(dbConstraints, func(dbConstraint Constraint) bool {
+		_, ok := helpers.ArrFindFunc(dbConstraints, func(dbConstraint structParsing.Constraint) bool {
 			return entityConstraint.TableName == dbConstraint.TableName &&
 				entityConstraint.ColumnName == dbConstraint.ColumnName &&
 				entityConstraint.ReferencedTableName == dbConstraint.ReferencedTableName &&
@@ -87,7 +88,7 @@ func getConstraintDifferences(entityConstraints []Constraint, dbConstraints []Co
 	}
 
 	for _, dbConstraint := range dbConstraints {
-		_, ok := helpers.ArrFindFunc(entityConstraints, func(entityConstraint Constraint) bool {
+		_, ok := helpers.ArrFindFunc(entityConstraints, func(entityConstraint structParsing.Constraint) bool {
 			return entityConstraint.TableName == dbConstraint.TableName &&
 				entityConstraint.ColumnName == dbConstraint.ColumnName &&
 				entityConstraint.ReferencedTableName == dbConstraint.ReferencedTableName &&

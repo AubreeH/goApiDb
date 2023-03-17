@@ -2,12 +2,12 @@ package access
 
 import (
 	"github.com/AubreeH/goApiDb/database"
-	"github.com/AubreeH/goApiDb/entities"
+	"github.com/AubreeH/goApiDb/structParsing"
 	"reflect"
 )
 
 func GetAll[T any](db *database.Database, entity T, limit int) ([]T, error) {
-	tableInfo, err := entities.GetTableInfo(entity)
+	tableInfo, err := structParsing.GetTableInfo(entity)
 	if err != nil {
 		return nil, err
 	}
@@ -16,8 +16,8 @@ func GetAll[T any](db *database.Database, entity T, limit int) ([]T, error) {
 
 	query := "SELECT * FROM " + tableInfo.Name
 
-	if DoesEntitySoftDelete(entity) {
-		query += " WHERE deleted = false"
+	if tableInfo.SoftDeletes != "" {
+		query += " WHERE " + tableInfo.SoftDeletes + " IS NULL"
 	}
 
 	if limit != 0 {

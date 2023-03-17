@@ -8,7 +8,7 @@ type Package struct {
 	Database *database.Database
 }
 
-func Setup(config database.DatabaseConfig) (*Package, error) {
+func Setup(config database.Config) (*Package, error) {
 	db, err := database.SetupDatabase(config)
 	if err != nil {
 		return nil, err

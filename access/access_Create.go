@@ -3,12 +3,12 @@ package access
 import (
 	"fmt"
 	"github.com/AubreeH/goApiDb/database"
-	"github.com/AubreeH/goApiDb/entities"
+	"github.com/AubreeH/goApiDb/structParsing"
 )
 
 func Create[T any](db *database.Database, values []T) (T, error) {
 	var entity T
-	tableInfo, err := entities.GetTableInfo(entity)
+	tableInfo, err := structParsing.GetTableInfo(entity)
 
 	queryColumns := ""
 	queryValues := ""
@@ -18,7 +18,7 @@ func Create[T any](db *database.Database, values []T) (T, error) {
 	var id any
 	for i := range values {
 		var rowData []ColumnData
-		rowData, err = GetData(values[i], CreateOperationHandler)
+		rowData, err = GetData(values[i], createOperationHandler)
 		if err != nil {
 			return output, err
 		}

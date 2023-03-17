@@ -2,9 +2,8 @@ package access
 
 import (
 	"errors"
-	"github.com/AubreeH/goApiDb/helpers"
+	"github.com/AubreeH/goApiDb/structParsing"
 	"reflect"
-	"strings"
 )
 
 func GetDataAndId(value any, operationHandler OperationHandler) (ColumnData, []ColumnData, error) {
@@ -60,7 +59,7 @@ func extractData(refValue reflect.Value, operationHandler OperationHandler) ([]C
 		field := refValue.Field(i)
 		fieldType := refValue.Type().Field(i)
 
-		if helpers.ParseBool(fieldType.Tag.Get("sql_ignore")) {
+		if structParsing.FormatSqlIgnore(fieldType) {
 			continue
 		}
 
@@ -75,11 +74,11 @@ func extractData(refValue reflect.Value, operationHandler OperationHandler) ([]C
 			continue
 		}
 
-		// TODO: Allow for case when sql_name is not defined
-		sqlName := fieldType.Tag.Get("sql_name")
-		nullable := helpers.ParseBool(fieldType.Tag.Get("sql_nullable"))
-		primaryKey := strings.ToLower(fieldType.Tag.Get("sql_key")) == "primary"
-		hasDefault := fieldType.Tag.Get("sql_default") != ""
+		sqlName := structParsing.FormatSqlName(fieldType)
+		nullable := structParsing.FormatBoolean(fieldType.Tag.Get(structParsing.SqlNullable)) == 1
+		primaryKey := structParsing.FormatSqlKey(fieldType) == "PRIMARY KEY"
+		hasDefault := structParsing.FormatSqlDefault(fieldType) != ""
+
 		var fieldData any
 		if fieldExtractor.IsValid() {
 			fieldData = fieldExtractor.Call([]reflect.Value{})[0].Interface()

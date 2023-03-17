@@ -4,92 +4,37 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/AubreeH/goApiDb/entities"
-	"github.com/AubreeH/goApiDb/helpers"
-	"reflect"
+	"github.com/AubreeH/goApiDb/structParsing"
 	"strings"
 )
 
-const (
-	tagSqlName                         = "sql_name"
-	tagSqlType                         = "sql_type"
-	tagSqlKey                          = "sql_key"
-	tagSqlExtras                       = "sql_extras"
-	tagSqlNullable                     = "sql_nullable"
-	tagSqlDefault                      = "sql_default"
-	tagSqlDisallowExternalModification = "sql_disallow_external_modification"
-)
-
-func GetTableSqlDescriptionFromEntity[TEntity interface{}](entity TEntity) (TablDesc, error) {
-	tableDescription := TablDesc{}
-
-	refValue := reflect.ValueOf(entity)
-	refType := refValue.Type()
-
-	if !refValue.IsValid() {
-		return TablDesc{}, errors.New("this value is invalid")
-	}
-
-	if refType.Kind() == reflect.Interface {
-		refValue = refValue.Elem()
-		refType = refValue.Type()
-	}
-
-	if refType.Kind() != reflect.Struct {
-		return TablDesc{}, errors.New("provided type is not a struct")
-	}
-
-	tableInfo, err := entities.GetTableInfo(entity)
-	if err != nil {
-		return TablDesc{}, err
-	}
-
-	tableDescription.Name = tableInfo.Name
-
-	parseColumns(&tableDescription, refValue)
-
-	return tableDescription, nil
-}
-
-func parseColumns(tableDescription *TablDesc, refValue reflect.Value) {
-	for i := 0; i < refValue.NumField(); i++ {
-		field := refValue.Type().Field(i)
-		if field.Type != reflect.TypeOf(entities.EntityBase{}) && !helpers.ParseBool(field.Tag.Get("sql_ignore")) {
-			if field.Type.Kind() == reflect.Struct && (field.Tag.Get("parse_struct") == "" || helpers.ParseBool(field.Tag.Get("parse_struct"))) {
-				parseColumns(tableDescription, refValue.Field(i))
-			} else {
-				colDesc := parseColumn(field)
-				tableDescription.Columns = append(tableDescription.Columns, colDesc)
-				tableDescription.Constraints = append(tableDescription.Constraints, colDesc.GetConstraints(tableDescription.Name)...)
-			}
-		}
-	}
-}
-
-func GetTableSqlDescriptionFromDb(db *Database, tableName string) (TablDesc, error) {
+func GetTableSqlDescriptionFromDb(db *Database, tableName string) (structParsing.TablDesc, error) {
 	if tableName == "" {
-		return TablDesc{}, errors.New("empty table name provided")
+		return structParsing.TablDesc{}, errors.New("empty table name provided")
 	}
 
 	result, err := db.Db.Query(fmt.Sprintf("DESCRIBE %s", tableName))
 	if err != nil {
-		return TablDesc{}, err
+		return structParsing.TablDesc{}, err
 	}
 
-	tableDescription := TablDesc{Name: tableName}
+	tableDescription := structParsing.TablDesc{Name: tableName}
 	for result.Next() {
-		colDesc := ColDesc{}
+		colDesc := structParsing.ColDesc{}
 
 		var sqlDefault sql.NullString
 		err = result.Scan(&colDesc.Name, &colDesc.Type, &colDesc.Nullable, &colDesc.Key, &sqlDefault, &colDesc.Extras)
 		if err != nil {
-			return TablDesc{}, err
+			return structParsing.TablDesc{}, err
 		}
-		colDesc.Default = sqlDefault.String
+		colDesc.Type = structParsing.FormatType(colDesc.Type)
+		colDesc.Default = structParsing.FormatDefault(sqlDefault.String)
+		colDesc.Nullable = structParsing.FormatNullable(colDesc.Nullable)
+		colDesc.Extras = structParsing.FormatExtras(colDesc.Extras)
 
-		err = colDesc.getKeyFromDb(db, tableName)
+		err = getKeyFromDb(db, tableName, &colDesc)
 		if err != nil {
-			return TablDesc{}, err
+			return structParsing.TablDesc{}, err
 		}
 
 		tableDescription.Columns = append(tableDescription.Columns, colDesc)
@@ -99,31 +44,8 @@ func GetTableSqlDescriptionFromDb(db *Database, tableName string) (TablDesc, err
 	return tableDescription, nil
 }
 
-func parseColumn(structField reflect.StructField) ColDesc {
-	desc := ColDesc{}
-	helpers.TagLookup(structField, tagSqlName, &desc.Name)
-	helpers.TagLookup(structField, tagSqlType, &desc.Type)
-	helpers.TagLookup(structField, tagSqlKey, &desc.Key)
-	helpers.TagLookup(structField, tagSqlExtras, &desc.Extras)
-	helpers.TagLookup(structField, tagSqlNullable, &desc.Nullable)
-	helpers.TagLookup(structField, tagSqlDefault, &desc.Default)
-
-	var output string
-	helpers.TagLookup(structField, tagSqlDisallowExternalModification, &output)
-	if output == "" && formatKey(desc.Key) == "PRIMARY KEY" {
-		output = "true"
-	}
-	desc.DisallowExternalModification = helpers.ParseBool(output)
-
-	if desc.Name == "" {
-		desc.Name = helpers.PascalToSnakeCase(structField.Name)
-	}
-
-	return desc
-}
-
 func GetUpdateTableQueriesForEntity[TEntity any](db *Database, entity TEntity) (tableSql string, addConstraintsSql []string, dropConstraintsSql []string, err error) {
-	entityDesc, err := GetTableSqlDescriptionFromEntity(entity)
+	entityDesc, err := structParsing.GetTableSqlDescriptionFromEntity(entity)
 	if err != nil {
 		return "", nil, nil, err
 	}
@@ -165,4 +87,35 @@ func GetUpdateTableQueriesForEntities(db *Database, entities ...interface{}) (ta
 	}
 
 	return tableQueries, addConstraintsQueries, dropConstraintsQueries, nil
+}
+
+// getKeyFromDb retrieves the key for the column currently defined in the db.
+func getKeyFromDb(db *Database, tableName string, col *structParsing.ColDesc) error {
+	if col.Name == "" {
+		return errors.New("column name is empty")
+	}
+
+	result, err := db.Db.Query(`SELECT CONSTRAINT_NAME, COLUMN_NAME, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?`, db.dbName, tableName, col.Name)
+	if err != nil {
+		return err
+	}
+
+	if result.Next() {
+		var constraintName string
+		var columnName string
+		var referencedTableName sql.NullString
+		var referencedColumnName sql.NullString
+		err = result.Scan(&constraintName, &columnName, &referencedTableName, &referencedColumnName)
+		if err != nil {
+			return err
+		}
+
+		if strings.ToLower(constraintName) == "primary" {
+			col.Key = "PRIMARY KEY"
+		} else if referencedTableName.Valid && referencedColumnName.Valid {
+			col.Key = structParsing.FormatKey(fmt.Sprintf("foreign,%s,%s,%s", referencedTableName.String, referencedColumnName.String, constraintName))
+		}
+	}
+
+	return nil
 }

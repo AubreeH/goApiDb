@@ -2,7 +2,7 @@ package access
 
 import (
 	"github.com/AubreeH/goApiDb/database"
-	"github.com/AubreeH/goApiDb/entities"
+	"github.com/AubreeH/goApiDb/structParsing"
 	"reflect"
 )
 
@@ -13,15 +13,15 @@ func Delete[T any](db *database.Database, entity T, id any) error {
 		return err
 	}
 
-	tableInfo, err := entities.GetTableInfo(entity)
+	tableInfo, err := structParsing.GetTableInfo(entity)
 	if err != nil {
 		return err
 	}
 
-	if DoesEntitySoftDelete(entity) {
+	if doesEntitySoftDelete(entity) {
 		return softDelete(db, entity, id)
 	} else {
-		_, err = DeleteOperationHandler(reflect.ValueOf(entity))
+		_, err = deleteOperationHandler(reflect.ValueOf(entity))
 		if err != nil {
 			return err
 		}
@@ -38,5 +38,5 @@ func softDelete[T any](db *database.Database, entity T, id any) error {
 	if err != nil {
 		return err
 	}
-	return update(db, existingEntity, id, DeleteOperationHandler)
+	return update(db, existingEntity, id, deleteOperationHandler)
 }
