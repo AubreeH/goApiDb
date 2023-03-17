@@ -36,7 +36,7 @@ func setupGetById() (output testingEntity1, err error) {
 	}
 
 	id, _, err := seedTableWithValueInMiddle(
-		1000000,
+		10000,
 		tableInfo.Name,
 		map[string]string{
 			"name":        "string",
