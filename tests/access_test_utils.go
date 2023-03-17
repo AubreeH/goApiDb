@@ -18,6 +18,15 @@ type testingEntity1 struct {
 
 type testingEntity2 struct {
 	entities.EntityBase `table_name:"test_entity_2"`
+	Id                  int64         `json:"id" sql_type:"int(64)" sql_key:"PRIMARY" sql_extras:"AUTO_INCREMENT" sql_disallow_external_modification:"true"`
+	Name                string        `json:"name" sql_type:"VARCHAR(256)" sql_nullable:"NO"`
+	Description         string        `json:"description" sql_type:"VARCHAR(256)" sql_nullable:"NO"`
+	TestEntity3Id       sql.NullInt64 `json:"test_entity_3_id" sql_type:"int(64)" sql_nullable:"true" sql_key:"foreign,test_entity_3,id" parse_struct:"false"`
+	entities.Dates
+}
+
+type testingEntity3 struct {
+	entities.EntityBase `table_name:"test_entity_3"`
 	Id                  int64  `json:"id" sql_type:"int(64)" sql_key:"PRIMARY" sql_extras:"AUTO_INCREMENT" sql_disallow_external_modification:"true"`
 	Name                string `json:"name" sql_type:"VARCHAR(256)" sql_nullable:"NO"`
 	Description         string `json:"description" sql_type:"VARCHAR(256)" sql_nullable:"NO"`

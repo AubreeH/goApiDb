@@ -9,9 +9,9 @@ import (
 func Test_GetById_Success(t *testing.T) {
 	InitDb()
 
-	_, err := setupTables(testingEntity1{}, testingEntity2{})
+	closeFunc, err := setupTables(testingEntity1{}, testingEntity2{})
 	assert(t, condition(err != nil, err))
-	//defer closeFunc()
+	defer closeFunc()
 
 	testEntity, err := setupGetById()
 	assert(t, condition(err != nil, err))

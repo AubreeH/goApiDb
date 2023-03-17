@@ -18,12 +18,22 @@ func (query *Query) Build() {
 func (query *Query) buildSelect() {
 	query.validateQuery()
 
+	fromTable, err := query.tables[query.from].Format()
+	if err != nil {
+		query.Error = err
+		return
+	}
 	q := "SELECT " + query.selectStr + " "
-	q += "FROM " + query.tables[query.from].Format() + " "
+	q += "FROM " + fromTable + " "
 
 	for i := range query.joins {
 		j := query.joins[i]
-		q += j.Format(query) + " "
+		join, err := j.Format(query)
+		if err != nil {
+			query.Error = err
+			return
+		}
+		q += join + " "
 	}
 
 	if query.clauses != "" {
@@ -37,7 +47,6 @@ func (query *Query) buildSelect() {
 	q, args, err := replaceParams(query.params, q)
 	if err != nil {
 		query.Error = err
-		return
 	}
 
 	query.query = q

@@ -2,7 +2,7 @@ package query
 
 import (
 	"database/sql"
-	"github.com/AubreeH/goApiDb/helpers"
+	"github.com/AubreeH/goApiDb/structParsing"
 )
 
 const (
@@ -33,9 +33,13 @@ type join struct {
 	On   string
 }
 
-func (j join) Format(query *Query) string {
+func (j join) Format(query *Query) (string, error) {
 	t := query.tables[j.To]
-	return j.Type + " JOIN " + t.Format() + " ON " + j.On
+	tbl, err := t.Format()
+	if err != nil {
+		return "", err
+	}
+	return j.Type + " JOIN " + tbl + " ON " + j.On, nil
 }
 
 type table struct {
@@ -43,8 +47,13 @@ type table struct {
 	Alias  string
 }
 
-func (t table) Format() string {
-	return helpers.GetTableName(t.Entity) + " " + t.Alias
+func (t table) Format() (string, error) {
+	tblInfo, err := structParsing.GetTableInfo(t.Entity)
+	if err != nil {
+		return "", err
+	}
+
+	return tblInfo.Name + " " + t.Alias, nil
 }
 
 type parameter struct {
