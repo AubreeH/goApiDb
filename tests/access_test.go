@@ -9,7 +9,7 @@ import (
 func Test_GetById_Success(t *testing.T) {
 	InitDb()
 
-	closeFunc, err := setupTables(testingEntity1{}, testingEntity2{})
+	closeFunc, err := setupTables(testingEntity1{}, testingEntity2{}, testingEntity3{})
 	assert(t, condition(err != nil, err))
 	defer closeFunc()
 
@@ -33,7 +33,7 @@ func Test_GetById_Success(t *testing.T) {
 func Test_GetById_InvalidId(t *testing.T) {
 	InitDb()
 
-	closeFunc, err := setupTables(testingEntity1{}, testingEntity2{})
+	closeFunc, err := setupTables(testingEntity1{}, testingEntity2{}, testingEntity3{})
 	assert(t, condition(err != nil, err))
 	defer closeFunc()
 
@@ -58,7 +58,7 @@ func Test_GetById_InvalidId(t *testing.T) {
 func Test_GetAll_Success(t *testing.T) {
 	InitDb()
 
-	_, err := setupTables(testingEntity1{}, testingEntity2{})
+	_, err := setupTables(testingEntity1{}, testingEntity2{}, testingEntity3{})
 	assert(t, condition(err != nil, err))
 	//defer closeFunc()
 

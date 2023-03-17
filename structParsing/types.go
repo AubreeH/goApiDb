@@ -56,7 +56,7 @@ func (col *ColDesc) Format(tableName string, action ...string) string {
 		return col.Name
 	}
 
-	helpers.ArrAdd(&s, col.Name, col.Type, col.Key, col.Nullable, col.Default, col.Extras)
+	helpers.ArrAdd(&s, col.Name, col.Type, FormatKey(col.Key), col.Nullable, col.Default, col.Extras)
 
 	return strings.Join(s, " ")
 }

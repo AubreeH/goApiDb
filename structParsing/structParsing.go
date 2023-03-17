@@ -62,7 +62,7 @@ func parseColumns(tableDescription *TablDesc, refValue reflect.Value) {
 func parseColumn(structField reflect.StructField, fieldValue reflect.Value) ColDesc {
 	desc := ColDesc{}
 	desc.Type = FormatSqlType(structField)
-	desc.Key = FormatSqlKey(structField)
+	desc.Key = GetTag(structField, SqlKey)
 	desc.Extras = FormatSqlExtras(structField)
 	desc.Nullable = FormatSqlNullable(structField)
 	desc.Default = FormatSqlDefault(structField)

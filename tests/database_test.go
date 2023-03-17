@@ -8,10 +8,8 @@ import (
 func Test_GetTableSqlDescription(t *testing.T) {
 	InitDb()
 
-	tableSql, constraintsToAdd, constraintsToDrop, err := database.GetUpdateTableQueriesForEntity(db, testingEntity2{})
+	tableSql, constraintsToAdd, constraintsToDrop, err := database.GetUpdateTableQueriesForEntity(db, testingEntity3{})
 	assertError(t, err)
-
-	p(tableSql)
 
 	for _, constraint := range constraintsToDrop {
 		_, err = db.Db.Exec(constraint)
@@ -22,8 +20,6 @@ func Test_GetTableSqlDescription(t *testing.T) {
 		_, err = db.Db.Exec(tableSql)
 		assertError(t, err)
 	}
-
-	p(constraintsToAdd)
 
 	for _, constraint := range constraintsToAdd {
 		_, err = db.Db.Exec(constraint)
@@ -37,7 +33,7 @@ func Test_GetTableSqlDescription(t *testing.T) {
 func Test_GetUpdateTableQueriesForEntities(t *testing.T) {
 	InitDb()
 
-	tableQueries, addConstraintsQueries, dropConstraintsQueries, err := database.GetUpdateTableQueriesForEntities(db, testingEntity1{}, testingEntity2{})
+	tableQueries, addConstraintsQueries, dropConstraintsQueries, err := database.GetUpdateTableQueriesForEntities(db, testingEntity1{}, testingEntity2{}, testingEntity3{})
 	assertError(t, err)
 
 	for _, query := range dropConstraintsQueries {
@@ -65,7 +61,7 @@ func Test_GetUpdateTableQueriesForEntities(t *testing.T) {
 func Test_BuildTables(t *testing.T) {
 	InitDb()
 
-	err := database.BuildTables(db, testingEntity1{}, testingEntity2{})
+	err := database.BuildTables(db, testingEntity1{}, testingEntity2{}, testingEntity3{})
 	assertError(t, err)
 
 	err = dropTable[testingEntity1]()

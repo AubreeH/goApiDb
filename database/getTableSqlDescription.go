@@ -81,7 +81,9 @@ func GetUpdateTableQueriesForEntities(db *Database, entities ...interface{}) (ta
 		if err != nil {
 			return nil, nil, nil, err
 		}
-		tableQueries = append(tableQueries, tableSql)
+		if tableSql != "" {
+			tableQueries = append(tableQueries, tableSql)
+		}
 		addConstraintsQueries = append(addConstraintsQueries, addConstraintsSql...)
 		dropConstraintsQueries = append(dropConstraintsQueries, dropConstraintsSql...)
 	}
@@ -111,9 +113,9 @@ func getKeyFromDb(db *Database, tableName string, col *structParsing.ColDesc) er
 		}
 
 		if strings.ToLower(constraintName) == "primary" {
-			col.Key = "PRIMARY KEY"
+			col.Key = "primary"
 		} else if referencedTableName.Valid && referencedColumnName.Valid {
-			col.Key = structParsing.FormatKey(fmt.Sprintf("foreign,%s,%s,%s", referencedTableName.String, referencedColumnName.String, constraintName))
+			col.Key = fmt.Sprintf("foreign,%s,%s,%s", referencedTableName.String, referencedColumnName.String, constraintName)
 		}
 	}
 
