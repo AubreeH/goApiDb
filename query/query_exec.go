@@ -3,7 +3,6 @@ package query
 import (
 	"database/sql"
 	"github.com/AubreeH/goApiDb/database"
-	"log"
 	"reflect"
 )
 
@@ -15,7 +14,6 @@ func (query *Query) Exec(db *database.Database) {
 		return
 	}
 
-	log.Print(query.query)
 	result, err := db.Db.Query(query.query, query.args...)
 
 	query.result = result
