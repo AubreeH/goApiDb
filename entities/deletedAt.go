@@ -7,7 +7,7 @@ import (
 )
 
 type DeletedAt struct {
-	DeletedAt dataTypes.NullTime `json:"deleted_at" sql_type:"DATETIME" sql_nullable:"true" sql_disallow_external_modification:"true" parse_struct:"false" soft_deletes:"true"`
+	DeletedAt dataTypes.NullTime `json:"deleted_at" db_type:"DATETIME" db_nullable:"true" db_disallow_external_modification:"true" parse_struct:"false" soft_deletes:"true"`
 }
 
 func (val DeletedAt) OnDelete() (DeletedAt, error) {

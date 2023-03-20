@@ -6,7 +6,7 @@ import (
 	"github.com/AubreeH/goApiDb/structParsing"
 )
 
-func Create[T any](db *database.Database, values []T) (T, error) {
+func Create[T any](db *database.Database, values []T) error {
 	var entity T
 	tableInfo, err := structParsing.GetTableInfo(entity)
 
@@ -14,13 +14,11 @@ func Create[T any](db *database.Database, values []T) (T, error) {
 	queryValues := ""
 	var args []any
 
-	var output T
-	var id any
 	for i := range values {
 		var rowData []ColumnData
 		rowData, err = GetData(values[i], createOperationHandler)
 		if err != nil {
-			return output, err
+			return err
 		}
 
 		for j := range rowData {
@@ -34,31 +32,16 @@ func Create[T any](db *database.Database, values []T) (T, error) {
 				queryValues += ", ?"
 			}
 
-			if columnData.PrimaryKey {
-				id = columnData.Data
-			}
-
 			args = append(args, columnData.Data)
 		}
 	}
 
 	query := fmt.Sprintf("INSERT"+" INTO %s (%s) values (%s)", tableInfo.Name, queryColumns, queryValues)
 
-	res, err := db.Db.Exec(query, args...)
+	_, err = db.Db.Exec(query, args...)
 	if err != nil {
-		return output, err
+		return err
 	}
 
-	if !(id == nil || id == 0 || id == "") {
-		return GetById(db, output, id)
-	}
-
-	intId, err := res.LastInsertId()
-	if err != nil {
-		return output, err
-	}
-
-	newEntity, err := GetById(db, output, intId)
-
-	return newEntity, err
+	return err
 }

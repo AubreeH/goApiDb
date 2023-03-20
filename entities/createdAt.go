@@ -6,7 +6,7 @@ import (
 )
 
 type CreatedAt struct {
-	CreatedAt dataTypes.Time `json:"created_at" sql_type:"DATETIME" sql_disallow_external_modification:"true" parse_struct:"false"`
+	CreatedAt dataTypes.Time `json:"created_at" db_type:"DATETIME" db_disallow_external_modification:"true" parse_struct:"false"`
 }
 
 func (CreatedAt) Describe() {

@@ -1,7 +1,7 @@
 package entities
 
 type SoftDeletes struct {
-	Deleted bool `json:"deleted" sql_type:"BOOLEAN" sql_nullable:"TRUE" soft_deletes:"true"`
+	Deleted bool `json:"deleted" db_type:"BOOLEAN" db_nullable:"TRUE" soft_deletes:"true"`
 }
 
 func (val SoftDeletes) OnDelete() (SoftDeletes, error) {

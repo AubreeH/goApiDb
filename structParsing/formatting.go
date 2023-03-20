@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// FormatName takes the sql_name struct tag string and the name of the field and returns either the sql_name tag if it is set or the field name in snake case.
+// FormatName takes the db_name struct tag string and the name of the field and returns either the db_name tag if it is set or the field name in snake case.
 func FormatName(tag string, fieldName string) string {
 	if tag != "" {
 		return tag
@@ -14,7 +14,7 @@ func FormatName(tag string, fieldName string) string {
 	return helpers.PascalToSnakeCase(fieldName)
 }
 
-// FormatKey takes the sql_key struct tag string and determines if the column is a PRIMARY KEY column.
+// FormatKey takes the db_key struct tag string and determines if the column is a PRIMARY KEY column.
 func FormatKey(key string) string {
 	if strings.ToLower(key) == "primary" || strings.ToLower(key) == "pri" {
 		return "PRIMARY KEY"
@@ -23,12 +23,12 @@ func FormatKey(key string) string {
 	return ""
 }
 
-// FormatExtras takes the sql_extras struct tag string and formats it for use in database manipulation.
+// FormatExtras takes the db_extras struct tag string and formats it for use in database manipulation.
 func FormatExtras(extras string) string {
 	return strings.ToUpper(extras)
 }
 
-// FormatNullable takes the sql_null struct tag string and determines if the column is nullable or not.
+// FormatNullable takes the db_null struct tag string and determines if the column is nullable or not.
 func FormatNullable(nullable string) string {
 	if FormatBoolean(nullable) != 1 {
 		return "NOT NULL"
@@ -37,7 +37,7 @@ func FormatNullable(nullable string) string {
 	return ""
 }
 
-// FormatDefault takes the sql_default struct tag string and determines the default values of the field.
+// FormatDefault takes the db_default struct tag string and determines the default values of the field.
 func FormatDefault(def string) string {
 	if def == "" {
 		return ""
@@ -46,7 +46,7 @@ func FormatDefault(def string) string {
 	return "DEFAULT " + def
 }
 
-// FormatType takes the sql_type struct tag string and determines the SQL type for the field.
+// FormatType takes the db_type struct tag string and determines the SQL type for the field.
 func FormatType(t string) string {
 	return strings.ToUpper(t)
 }
@@ -58,9 +58,13 @@ func FormatBoolean(b string) int {
 		return 1
 	case "yes":
 		return 1
+	case "y":
+		return 1
 	case "false":
 		return 0
 	case "no":
+		return 0
+	case "n":
 		return 0
 	default:
 		return -1

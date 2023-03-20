@@ -5,14 +5,14 @@ import (
 )
 
 const (
-	SqlName                         = "sql_name"
-	SqlType                         = "sql_type"
-	SqlKey                          = "sql_key"
-	SqlExtras                       = "sql_extras"
-	SqlNullable                     = "sql_nullable"
-	SqlDefault                      = "sql_default"
-	SqlDisallowExternalModification = "sql_disallow_external_modification"
-	SqlIgnore                       = "sql_ignore"
+	SqlName                         = "db_name"
+	SqlType                         = "db_type"
+	SqlKey                          = "db_key"
+	SqlExtras                       = "db_extras"
+	SqlNullable                     = "db_nullable"
+	SqlDefault                      = "db_default"
+	SqlDisallowExternalModification = "db_disallow_external_modification"
+	SqlIgnore                       = "db_ignore"
 	ParseStruct                     = "parse_struct"
 	SoftDeletes                     = "soft_deletes"
 )
