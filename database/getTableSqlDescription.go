@@ -92,6 +92,7 @@ func GetUpdateTableQueriesForEntities(db *Database, entities ...interface{}) (ta
 }
 
 // getKeyFromDb retrieves the key for the column currently defined in the db.
+// TODO: Add unique constraint
 func getKeyFromDb(db *Database, tableName string, col *structParsing.ColDesc) error {
 	if col.Name == "" {
 		return errors.New("column name is empty")

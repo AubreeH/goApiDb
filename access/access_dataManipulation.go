@@ -86,7 +86,6 @@ func extractData(refValue reflect.Value, operationHandler OperationHandler) ([]C
 			fieldData = field.Interface()
 		}
 
-		// TODO: Fix prioritise existing field
 		if primaryKey && hasDefault {
 			data = append(data, ColumnData{Column: sqlName, PrimaryKey: primaryKey, Data: nil, PrioritiseExisting: !nullable})
 		} else {
