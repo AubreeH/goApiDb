@@ -65,7 +65,7 @@ func extractData(refValue reflect.Value, operationHandler OperationHandler) ([]C
 
 		fieldExtractor := field.MethodByName("ExtractDataFunc")
 
-		if field.Kind() == reflect.Struct && !fieldExtractor.IsValid() {
+		if field.Kind() == reflect.Struct && !fieldExtractor.IsValid() && structParsing.FormatParseStruct(fieldType) {
 			result, err := getColumnData(field, operationHandler)
 			if err != nil {
 				return nil, err
