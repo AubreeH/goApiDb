@@ -22,7 +22,7 @@ func update[T any](db *database.Database, value T, id any, operationHandler Oper
 	if err != nil {
 		return err
 	}
-	_, updateData, err := GetDataAndId(value, nilOperationHandler)
+	_, updateData, err := GetDataAndId(existingValue, nilOperationHandler)
 	if err != nil {
 		return err
 	}
@@ -43,9 +43,8 @@ func update[T any](db *database.Database, value T, id any, operationHandler Oper
 	}
 
 	var args []any
-	for j := range mergedData {
-		column := mergedData[j]
-		if updateData[j].Data != column.Data {
+	for j, column := range mergedData {
+		if updateData[j].Data != column.Data && !column.PrioritiseExisting {
 			if q != qBase {
 				q += ", "
 			}
