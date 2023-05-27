@@ -2,9 +2,6 @@ package tests
 
 import (
 	"fmt"
-	"github.com/AubreeH/goApiDb/database"
-	"github.com/AubreeH/goApiDb/structParsing"
-	"github.com/joho/godotenv"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -12,6 +9,10 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/AubreeH/goApiDb/database"
+	"github.com/AubreeH/goApiDb/structParsing"
+	"github.com/joho/godotenv"
 )
 
 var db *database.Database
@@ -54,6 +55,7 @@ func getDatabaseConfig() database.Config {
 		User:     os.Getenv("DB_USER"),
 		Password: os.Getenv("DB_PASS"),
 		Name:     os.Getenv("DB_NAME"),
+		Driver:   database.DriverType(os.Getenv("DB_DRIVER")),
 	}
 }
 

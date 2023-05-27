@@ -2,7 +2,10 @@ package database
 
 import (
 	"database/sql"
+
 	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/lib/pq"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 type Config struct {
@@ -11,7 +14,17 @@ type Config struct {
 	Name     string
 	User     string
 	Password string
+	Driver   DriverType
 }
+
+type DriverType string
+
+const (
+	MySql    DriverType = "mysql"
+	MariaDB  DriverType = "mysql"
+	SQLite   DriverType = "sqlite3"
+	Postgres DriverType = "postgres"
+)
 
 type Database struct {
 	Db           *sql.DB
@@ -20,9 +33,7 @@ type Database struct {
 }
 
 func SetupDatabase(config Config) (*Database, error) {
-	connectionString := getConnectionString(config)
-
-	db, err := sql.Open("mysql", connectionString)
+	db, err := sql.Open(string(config.Driver), getConnectionString(config))
 
 	if err != nil {
 		return nil, err
@@ -38,25 +49,6 @@ func SetupDatabase(config Config) (*Database, error) {
 	setupTableVariables(output)
 
 	return output, nil
-}
-
-func getConnectionString(config Config) string {
-
-	var account string
-	if config.Password != "" {
-		account = config.User + ":" + config.Password
-	} else {
-		account = config.User
-	}
-
-	var url string
-	if config.Port != "" {
-		url = config.Host + ":" + config.Port
-	} else {
-		url = config.Host
-	}
-
-	return account + "@tcp(" + url + ")/" + config.Name + "?parseTime=true"
 }
 
 func setupTableVariables(database *Database) {
