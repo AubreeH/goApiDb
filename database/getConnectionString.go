@@ -50,7 +50,7 @@ func getPostgresConnectionString(config Config) string {
 		url = config.Host
 	}
 
-	return fmt.Sprintf("postgresql://%s@%s/%s?sslmode=disable&parseTime=true", account, url, config.Name)
+	return fmt.Sprintf("postgresql://%s@%s/%s?sslmode=disable", account, url, config.Name)
 }
 
 func getSQLiteConnectionString(config Config) string {
