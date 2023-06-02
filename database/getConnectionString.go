@@ -32,7 +32,7 @@ func getMySqlConnectionString(config Config) string {
 		url = config.Host
 	}
 
-	return fmt.Sprintf("%s@%s(%s)/%s?parseTime=true", account, "tcp", url, config.Name)
+	return fmt.Sprintf("%s@%s(%s)/%s?sslmode=disable&parseTime=true", account, "tcp", url, config.Name)
 }
 
 func getPostgresConnectionString(config Config) string {
