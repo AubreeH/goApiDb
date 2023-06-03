@@ -42,12 +42,12 @@ func (query *Query) buildSelect() string {
 		q += "WHERE " + query.clauses + " "
 	}
 
-	if query.orderBy != "" {
-		q += "ORDER BY " + query.orderBy + " "
-	}
-
 	if query.groupBy != "" {
 		q += "GROUP BY " + query.groupBy + " "
+	}
+
+	if query.orderBy != "" {
+		q += "ORDER BY " + query.orderBy + " "
 	}
 
 	q, args, err := replaceParams(query.params, q)
