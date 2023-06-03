@@ -2,6 +2,7 @@ package query
 
 import (
 	"database/sql"
+
 	"github.com/AubreeH/goApiDb/structParsing"
 )
 
@@ -22,6 +23,7 @@ type Query struct {
 	params    map[string]parameter
 	tables    map[string]table
 	orderBy   string
+	groupBy   string
 	result    *sql.Rows
 	Error     error
 	args      []any

@@ -43,7 +43,11 @@ func (query *Query) buildSelect() string {
 	}
 
 	if query.orderBy != "" {
-		q += "ORDER BY " + query.orderBy
+		q += "ORDER BY " + query.orderBy + " "
+	}
+
+	if query.groupBy != "" {
+		q += "GROUP BY " + query.groupBy + " "
 	}
 
 	q, args, err := replaceParams(query.params, q)
@@ -51,6 +55,8 @@ func (query *Query) buildSelect() string {
 		query.Error = err
 		return ""
 	}
+
+	q = strings.Trim(q, " ")
 
 	query.query = q
 	query.args = args
