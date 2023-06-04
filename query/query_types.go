@@ -50,12 +50,21 @@ type table struct {
 }
 
 func (t table) Format() (string, error) {
-	tblInfo, err := structParsing.GetTableInfo(t.Entity)
-	if err != nil {
-		return "", err
+	var tableName string
+
+	switch t.Entity.(type) {
+	case string:
+		tableName = t.Entity.(string)
+		break
+	default:
+		tblInfo, err := structParsing.GetTableInfo(t.Entity)
+		if err != nil {
+			return "", err
+		}
+		tableName = tblInfo.Name
 	}
 
-	return tblInfo.Name + " " + t.Alias, nil
+	return tableName + " " + t.Alias, nil
 }
 
 type parameter struct {
