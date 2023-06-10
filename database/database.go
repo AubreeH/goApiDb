@@ -22,7 +22,7 @@ type DriverType string
 const (
 	MySql    DriverType = "mysql"
 	MariaDB  DriverType = "mysql"
-	SQLite   DriverType = "sqlite3"
+	SQLite   DriverType = "sqlite"
 	Postgres DriverType = "postgres"
 )
 
