@@ -4,8 +4,8 @@ import (
 	"database/sql"
 
 	_ "github.com/go-sql-driver/mysql"
-	_ "github.com/jackc/pgx/v5"
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/lib/pq"
+	_ "modernc.org/sqlite"
 )
 
 type Config struct {
@@ -22,8 +22,8 @@ type DriverType string
 const (
 	MySql    DriverType = "mysql"
 	MariaDB  DriverType = "mysql"
-	SQLite   DriverType = "sqlite3"
-	Postgres DriverType = "pgx"
+	SQLite   DriverType = "sqlite"
+	Postgres DriverType = "postgres"
 )
 
 type Database struct {

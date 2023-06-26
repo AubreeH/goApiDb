@@ -6,22 +6,24 @@ import (
 	"strings"
 )
 
-func (query *Query) Build() {
+func (query *Query) Build() string {
 	switch query.operation {
 	case SelectKeyword:
-		query.buildSelect()
+		return query.buildSelect()
 	case UpdateKeyword:
-		query.buildUpdate()
+		return query.buildUpdate()
 	}
+
+	return ""
 }
 
-func (query *Query) buildSelect() {
+func (query *Query) buildSelect() string {
 	query.validateQuery()
 
 	fromTable, err := query.tables[query.from].Format()
 	if err != nil {
 		query.Error = err
-		return
+		return ""
 	}
 	q := "SELECT " + query.selectStr + " "
 	q += "FROM " + fromTable + " "
@@ -31,7 +33,7 @@ func (query *Query) buildSelect() {
 		join, err := j.Format(query)
 		if err != nil {
 			query.Error = err
-			return
+			return ""
 		}
 		q += join + " "
 	}
@@ -40,17 +42,25 @@ func (query *Query) buildSelect() {
 		q += "WHERE " + query.clauses + " "
 	}
 
+	if query.groupBy != "" {
+		q += "GROUP BY " + query.groupBy + " "
+	}
+
 	if query.orderBy != "" {
-		q += "ORDER BY " + query.orderBy
+		q += "ORDER BY " + query.orderBy + " "
 	}
 
 	q, args, err := replaceParams(query.params, q)
 	if err != nil {
 		query.Error = err
+		return ""
 	}
+
+	q = strings.Trim(q, " ")
 
 	query.query = q
 	query.args = args
+	return q
 }
 
 func replaceParams(parameters map[string]parameter, q string) (string, []any, error) {
@@ -82,6 +92,6 @@ func replaceParams(parameters map[string]parameter, q string) (string, []any, er
 	return q, args, nil
 }
 
-func (query *Query) buildUpdate() {
+func (query *Query) buildUpdate() string {
 	panic("not implemented")
 }

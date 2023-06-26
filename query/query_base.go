@@ -20,3 +20,10 @@ func (query *Query) From(entity any, alias string) *Query {
 
 	return query
 }
+
+func (query *Query) FromTable(t string, alias string) *Query {
+	query.tables[alias] = table{Entity: t, Alias: alias}
+	query.from = alias
+
+	return query
+}

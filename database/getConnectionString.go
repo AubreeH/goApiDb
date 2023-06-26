@@ -54,5 +54,5 @@ func getPostgresConnectionString(config Config) string {
 }
 
 func getSQLiteConnectionString(config Config) string {
-	return fmt.Sprintf("file:%s?mode=memory&cache=%s", config.Host, "shared")
+	return fmt.Sprintf("%s", config.Host)
 }
