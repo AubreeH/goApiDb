@@ -2,8 +2,9 @@ package database
 
 import (
 	"fmt"
-	"github.com/AubreeH/goApiDb/structParsing"
 	"strings"
+
+	"github.com/AubreeH/goApiDb/structParsing"
 )
 
 type TablDescDiff struct {
@@ -60,6 +61,6 @@ func (diff TablDescDiff) Format() (tableQuery string, addConstraintQueries []str
 		return "", addConstraintQueries, dropConstraintQueries
 	}
 
-	tableQuery = fmt.Sprintf("ALTER TABLE %s %s;", diff.Name, columns)
+	tableQuery = fmt.Sprintf("ALTER TABLE `%s` %s;", diff.Name, columns)
 	return tableQuery, addConstraintQueries, dropConstraintQueries
 }

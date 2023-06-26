@@ -2,9 +2,10 @@ package tests
 
 import (
 	"database/sql"
+	"time"
+
 	"github.com/AubreeH/goApiDb/entities"
 	"github.com/AubreeH/goApiDb/structParsing"
-	"time"
 )
 
 type testingEntity1 struct {
@@ -13,6 +14,7 @@ type testingEntity1 struct {
 	Name                string        `json:"name" db_type:"VARCHAR(256)"`
 	Description         string        `json:"description" db_type:"VARCHAR(256)"`
 	TestEntity2Id       sql.NullInt64 `json:"test_entity_2_id" db_type:"int(64)" db_nullable:"true" db_key:"foreign,test_entity_2,id" parse_struct:"false"`
+	Drop                time.Time     `json:"drop" db_type:"datetime" db_nullable:"false" parse_struct:"false"`
 	entities.Dates
 }
 
@@ -52,16 +54,18 @@ func setupGetById() (output testingEntity1, err error) {
 			"description": "string",
 			"created_at":  "time",
 			"updated_at":  "time",
+			"drop":        "time",
 		},
 		map[string]any{
 			"name":        testEntityName,
 			"description": testEntityDescription,
 			"created_at":  testEntityCreatedAt,
 			"updated_at":  testEntityUpdatedAt,
+			"drop":        time.Now(),
 		},
 	)
 	if err != nil {
-		return testingEntity1{}, nil
+		return testingEntity1{}, err
 	}
 
 	testEntity := testingEntity1{
@@ -85,5 +89,6 @@ func setupGetAll() (expectedValue map[int64]map[string]any, err error) {
 		"description": "string",
 		"created_at":  "time",
 		"updated_at":  "time",
+		"drop":        "time",
 	})
 }

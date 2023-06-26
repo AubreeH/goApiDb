@@ -2,8 +2,9 @@ package database
 
 import (
 	"database/sql"
-	"github.com/AubreeH/goApiDb/structParsing"
 	"reflect"
+
+	"github.com/AubreeH/goApiDb/structParsing"
 )
 
 func getEntityConstruction[T any](entity *T) (map[string]any, T, string, error) {

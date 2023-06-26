@@ -2,8 +2,9 @@ package structParsing
 
 import (
 	"fmt"
-	"github.com/AubreeH/goApiDb/helpers"
 	"strings"
+
+	"github.com/AubreeH/goApiDb/helpers"
 )
 
 type TablDesc struct {
@@ -46,7 +47,7 @@ func (tabl TablDesc) Format() (string, []string) {
 		}
 	}
 
-	return fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", tabl.Name, strings.Join(columns, ", ")), constraints
+	return fmt.Sprintf("CREATE TABLE IF NOT EXISTS `%s` (%s)", tabl.Name, strings.Join(columns, ", ")), constraints
 }
 
 func (col *ColDesc) Format(tableName string, action ...string) string {
@@ -56,7 +57,7 @@ func (col *ColDesc) Format(tableName string, action ...string) string {
 		return col.Name
 	}
 
-	helpers.ArrAdd(&s, col.Name, col.Type, FormatKey(col.Key), col.Nullable, col.Default, col.Extras)
+	helpers.ArrAdd(&s, fmt.Sprintf("`%s`", col.Name), col.Type, FormatKey(col.Key), col.Nullable, col.Default, col.Extras)
 
 	return strings.Join(s, " ")
 }
@@ -85,13 +86,13 @@ func (constraint Constraint) Format(action string) string {
 	switch action {
 	case "drop":
 		return fmt.Sprintf(
-			"ALTER TABLE %s DROP FOREIGN KEY %s",
+			"ALTER TABLE `%s` DROP FOREIGN KEY `%s`",
 			constraint.TableName,
 			constraint.ConstraintName,
 		)
 	default:
 		return fmt.Sprintf(
-			"ALTER TABLE %s ADD FOREIGN KEY %s(%s) REFERENCES %s(%s)",
+			"ALTER TABLE `%s` ADD FOREIGN KEY `%s`(`%s`) REFERENCES `%s`(`%s`)",
 			constraint.TableName,
 			constraint.ConstraintName,
 			constraint.ColumnName,

@@ -4,7 +4,7 @@ import (
 	"database/sql"
 
 	_ "github.com/go-sql-driver/mysql"
-	_ "github.com/lib/pq"
+	_ "github.com/jackc/pgx/v5"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -23,7 +23,7 @@ const (
 	MySql    DriverType = "mysql"
 	MariaDB  DriverType = "mysql"
 	SQLite   DriverType = "sqlite3"
-	Postgres DriverType = "postgres"
+	Postgres DriverType = "pgx"
 )
 
 type Database struct {

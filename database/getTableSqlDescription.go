@@ -4,8 +4,9 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/AubreeH/goApiDb/structParsing"
 	"strings"
+
+	"github.com/AubreeH/goApiDb/structParsing"
 )
 
 func GetTableSqlDescriptionFromDb(db *Database, tableName string) (structParsing.TablDesc, error) {
