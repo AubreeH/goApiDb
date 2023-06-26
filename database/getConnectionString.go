@@ -20,39 +20,39 @@ func getConnectionString(config Config) string {
 func getMySqlConnectionString(config Config) string {
 	var account string
 	if config.Password != "" {
-		account = config.User + ":" + config.Password
+		account = config.Username + ":" + config.Password
 	} else {
-		account = config.User
+		account = config.Username
 	}
 
 	var url string
 	if config.Port != "" {
-		url = config.Host + ":" + config.Port
+		url = config.Hostname + ":" + config.Port
 	} else {
-		url = config.Host
+		url = config.Hostname
 	}
 
-	return fmt.Sprintf("%s@%s(%s)/%s?parseTime=true", account, "tcp", url, config.Name)
+	return fmt.Sprintf("%s@%s(%s)/%s?parseTime=true", account, "tcp", url, config.Database)
 }
 
 func getPostgresConnectionString(config Config) string {
 	var account string
 	if config.Password != "" {
-		account = config.User + ":" + config.Password
+		account = config.Username + ":" + config.Password
 	} else {
-		account = config.User
+		account = config.Username
 	}
 
 	var url string
 	if config.Port != "" {
-		url = config.Host + ":" + config.Port
+		url = config.Hostname + ":" + config.Port
 	} else {
-		url = config.Host
+		url = config.Hostname
 	}
 
-	return fmt.Sprintf("postgresql://%s@%s/%s?sslmode=disable", account, url, config.Name)
+	return fmt.Sprintf("postgresql://%s@%s/%s?sslmode=disable", account, url, config.Database)
 }
 
 func getSQLiteConnectionString(config Config) string {
-	return fmt.Sprintf("%s", config.Host)
+	return config.Hostname
 }

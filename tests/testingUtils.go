@@ -50,11 +50,11 @@ func randSeq(n int) string {
 
 func getDatabaseConfig() database.Config {
 	return database.Config{
-		Host:     os.Getenv("DB_HOST"),
+		Hostname: os.Getenv("DB_HOST"),
 		Port:     os.Getenv("DB_PORT"),
-		User:     os.Getenv("DB_USER"),
+		Username: os.Getenv("DB_USER"),
 		Password: os.Getenv("DB_PASS"),
-		Name:     os.Getenv("DB_NAME"),
+		Database: os.Getenv("DB_NAME"),
 		Driver:   database.DriverType(os.Getenv("DB_DRIVER")),
 	}
 }

@@ -2,36 +2,63 @@ package database
 
 import (
 	"database/sql"
-
-	_ "github.com/go-sql-driver/mysql"
-	_ "github.com/lib/pq"
-	_ "modernc.org/sqlite"
+	// _ "github.com/go-sql-driver/mysql"
+	// _ "github.com/lib/pq"
+	// _ "modernc.org/sqlite"
 )
 
+// Config - Used to provide connection details to [SetupDatabase] function
 type Config struct {
-	Host     string
-	Port     string
-	Name     string
-	User     string
+	// Hostname - Specifies the hostname for connecting to the database.
+	Hostname string
+	// Port - Port to user when connecting to the database
+	Port string
+	// Database - Name of the database to connect to.
+	Database string
+	// Username - Username to user when connecting to the database.
+	Username string
+	// Password - Specifies the password to use when connecting to the database.
 	Password string
-	Driver   DriverType
+	// Driver - Specifies the driver to use when connecting to the database.
+	Driver DriverType
 }
 
 type DriverType string
 
 const (
-	MySql    DriverType = "mysql"
-	MariaDB  DriverType = "mysql"
-	SQLite   DriverType = "sqlite"
+	// MySql driver name for [go-sql-driver/mysql package]
+	//
+	// [go-sql-driver/mysql package]: https://pkg.go.dev/github.com/go-sql-driver/mysql
+	MySql DriverType = "mysql"
+
+	// MariaDB alias driver name for [go-sql-driver/mysql package]
+	//
+	// [go-sql-driver/mysql package]: https://pkg.go.dev/github.com/go-sql-driver/mysql
+	MariaDB DriverType = "mysql"
+
+	// SQLite driver name for [modernc.org/sqlite package]
+	//
+	// [modernc.org/sqlite package]: https://pkg.go.dev/modernc.org/sqlite
+	SQLite DriverType = "sqlite"
+
+	// Postgres driver name for [lib/pq package]
+	//
+	// [lib/pq package]: https://pkg.go.dev/github.com/lib/pq
 	Postgres DriverType = "postgres"
 )
 
+// Database contains the [sql.DB] database connection and basic database info.
 type Database struct {
 	Db           *sql.DB
 	dbName       string
 	tableColumns map[string][]string
 }
 
+// SetupDatabase - Initial setup function for goApiDb connection.
+//
+// Uses [sql.Open] and info from [Config] parameter to establish database connection.
+//
+// Returns [Database] connection.
 func SetupDatabase(config Config) (*Database, error) {
 	db, err := sql.Open(string(config.Driver), getConnectionString(config))
 
@@ -44,7 +71,7 @@ func SetupDatabase(config Config) (*Database, error) {
 		return nil, err
 	}
 
-	output := &Database{Db: db, dbName: config.Name, tableColumns: make(map[string][]string)}
+	output := &Database{Db: db, dbName: config.Database, tableColumns: make(map[string][]string)}
 
 	setupTableVariables(output)
 
