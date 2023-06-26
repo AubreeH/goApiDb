@@ -1,19 +1,28 @@
 package tests
 
 import (
-	"github.com/AubreeH/goApiDb/query"
+	"fmt"
 	"testing"
 	"time"
+
+	"github.com/AubreeH/goApiDb/query"
 )
 
 func Test_QueryBuilder_Success(t *testing.T) {
 	InitDb()
 
+	fmt.Println("Setting up tables")
 	closeFunc, err := setupTables(testingEntity1{}, testingEntity2{}, testingEntity3{})
+	assertError(t, err)
 	defer closeFunc()
+	fmt.Println("Setting up tables - Done")
 
+	fmt.Println("Seeding tables")
+	testEntity1Count := 0
+	testEntity2Count := 0
+	testEntity3Count := 0
 	for i := 0; i < 5000; i++ {
-		id, _, err := seedTableWithValueInMiddle(50, "test_entity_3", map[string]string{
+		id, _, err := seedTableWithValueInMiddle(500, "test_entity_3", map[string]string{
 			"name":        "string",
 			"description": "string",
 			"created_at":  "time",
@@ -26,8 +35,10 @@ func Test_QueryBuilder_Success(t *testing.T) {
 		})
 		assertError(t, err)
 
+		testEntity3Count += 500
+
 		if i%2 == 0 {
-			id, _, err := seedTableWithValueInMiddle(60, "test_entity_2", map[string]string{
+			id, _, err := seedTableWithValueInMiddle(600, "test_entity_2", map[string]string{
 				"name":        "string",
 				"description": "string",
 				"created_at":  "time",
@@ -41,23 +52,33 @@ func Test_QueryBuilder_Success(t *testing.T) {
 			})
 			assertError(t, err)
 
+			testEntity2Count += 600
+
 			if i%4 == 0 {
-				_, _, err := seedTableWithValueInMiddle(70, "test_entity_1", map[string]string{
+				_, _, err := seedTableWithValueInMiddle(700, "test_entity_1", map[string]string{
 					"name":        "string",
 					"description": "string",
 					"created_at":  "time",
 					"updated_at":  "time",
+					"drop":        "time",
 				}, map[string]any{
 					"name":            randSeq(20),
 					"description":     randSeq(20),
 					"test_entity2_id": id,
 					"created_at":      time.Now(),
 					"updated_at":      time.Now(),
+					"drop":            time.Now(),
 				})
 				assertError(t, err)
+
+				testEntity1Count += 700
 			}
 		}
 	}
+	fmt.Printf("Seeding tables - Done (%d test_entity_3, %d test_entity_2, %d test_entity_1)\n", testEntity3Count, testEntity2Count, testEntity1Count)
+
+	fmt.Println("Querying")
+	start := time.Now()
 
 	q := query.NewSelectQuery()
 	q.Select("te2.name as Te2name", "te1.id as Id", "te1.name as Te1name", "te3.name as Te3name").
@@ -67,8 +88,6 @@ func Test_QueryBuilder_Success(t *testing.T) {
 		Where("te2.name IS NOT NULL").
 		Where("te3.name IS NOT NULL")
 
-	start := time.Now()
-
 	results, err := query.ExecuteQuery(db, q, struct {
 		Te2name string
 		Id      int64
@@ -77,7 +96,9 @@ func Test_QueryBuilder_Success(t *testing.T) {
 	}{})
 
 	end := time.Now()
+	fmt.Println("Querying - Done")
 
-	t.Log("QueryBuilder Exec Duration", end.UnixMicro()-start.UnixMicro(), "With", len(results), "results")
+	duration := end.UnixMicro() - start.UnixMicro()
+	t.Log("QueryBuilder Exec Duration", fmt.Sprint(duration, "µs"), "With", len(results), fmt.Sprintf("results (Average: %dµs)", duration/int64(len(results))))
 	assertError(t, err)
 }

@@ -1,9 +1,12 @@
 package tests
 
 import (
-	"github.com/AubreeH/goApiDb/access"
+	"fmt"
 	"testing"
 	"time"
+
+	"github.com/AubreeH/goApiDb/access"
+	_ "github.com/go-sql-driver/mysql"
 )
 
 func Test_GetById_Success(t *testing.T) {
@@ -14,14 +17,15 @@ func Test_GetById_Success(t *testing.T) {
 	defer closeFunc()
 
 	testEntity, err := setupGetById()
-	assert(t, condition(err != nil, err))
+	assertError(t, err)
 
-	start := time.Now()
-	entity, err := access.GetById(db, testingEntity1{}, testEntity.Id)
-	end := time.Now()
-	assert(t, condition(err != nil, err))
+	entity, timedResult, err := access.GetByIdTimed(db, testingEntity1{}, testEntity.Id)
+	assertError(t, err)
 
-	t.Log("GetById Duration", end.UnixMicro()-start.UnixMicro(), "At Id of", testEntity.Id)
+	t.Log("Overall Duration", fmt.Sprint(timedResult.OverallDuration, "µs"), "At Id of", testEntity.Id)
+	t.Log("Query Build Duration", fmt.Sprint(timedResult.BuildQueryDuration, "µs"))
+	t.Log("Query Exec Duration", fmt.Sprint(timedResult.QueryExecDuration, "µs"))
+	t.Log("Format Result Duration", fmt.Sprint(timedResult.FormatResultDuration, "µs"))
 
 	assert(t,
 		condition(testEntity.Id != entity.Id, "ids do no match"),
@@ -45,7 +49,7 @@ func Test_GetById_InvalidId(t *testing.T) {
 	end := time.Now()
 	assert(t, condition(err != nil && err.Error() != "unable to find value", err.Error()))
 
-	t.Log("GetById Duration", end.UnixMicro()-start.UnixMicro())
+	t.Log("GetById Duration", fmt.Sprint(end.UnixMicro()-start.UnixMicro(), "µs"))
 
 	assert(t,
 		condition(entity.Id != 0, "testing entity id should be 0"),
@@ -58,19 +62,20 @@ func Test_GetById_InvalidId(t *testing.T) {
 func Test_GetAll_Success(t *testing.T) {
 	InitDb()
 
-	_, err := setupTables(testingEntity1{}, testingEntity2{}, testingEntity3{})
+	closeFunc, err := setupTables(testingEntity1{}, testingEntity2{}, testingEntity3{})
 	assert(t, condition(err != nil, err))
-	//defer closeFunc()
+	defer closeFunc()
 
 	seededValues, err := setupGetAll()
 	assert(t, condition(err != nil, err))
 
-	start := time.Now()
-	results, err := access.GetAll(db, testingEntity1{}, 0)
-	end := time.Now()
+	results, timedResult, err := access.GetAllTimed(db, testingEntity1{}, 0)
 	assert(t, condition(err != nil, err))
 
-	t.Log("GetAll Duration", end.UnixMicro()-start.UnixMicro())
+	t.Log("Overall Duration", fmt.Sprint(timedResult.OverallDuration, "µs"))
+	t.Log("Query Build Duration", fmt.Sprint(timedResult.BuildQueryDuration, "µs"))
+	t.Log("Query Exec Duration", fmt.Sprint(timedResult.QueryExecDuration, "µs"))
+	t.Log("Format Result Duration", fmt.Sprint(timedResult.FormatResultDuration, "µs"))
 
 	assert(t, condition(len(results) != len(seededValues), "length of GetAll result differs from length of seeded values (Length of Results:", len(results), ", Length of Seeded Values: ", len(seededValues), ")"))
 
@@ -84,4 +89,31 @@ func Test_GetAll_Success(t *testing.T) {
 			condition(v.Description != seededValue["description"], "descriptions do not match (", v.Description, "!=", seededValue["name"], ")"),
 		)
 	}
+}
+
+func Test_Delete_Success(t *testing.T) {
+	InitDb()
+
+	closeFunc, err := setupTables(testingEntity1{}, testingEntity2{}, testingEntity3{})
+	assert(t, condition(err != nil, err))
+	defer closeFunc()
+
+	testEntity, err := setupGetById()
+	assertError(t, err)
+
+	timedResult, err := access.DeleteTimed(db, testingEntity1{}, testEntity.Id)
+	assertError(t, err)
+
+	t.Log("Overall Duration", fmt.Sprint(timedResult.OverallDuration, "µs"), "At Id of", testEntity.Id)
+	t.Log("Query Build Duration", fmt.Sprint(timedResult.BuildQueryDuration, "µs"))
+	t.Log("Query Exec Duration", fmt.Sprint(timedResult.QueryExecDuration, "µs"))
+
+	entity, err := access.GetById(db, testingEntity1{}, testEntity.Id)
+
+	assert(t,
+		condition(err.Error() != "unable to find value", "error does not match", err),
+		condition(entity.Id != 0, "id is set"),
+		condition(entity.Name != "", "name is set"),
+		condition(entity.Description != "", "description is set"),
+	)
 }

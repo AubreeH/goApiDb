@@ -69,10 +69,10 @@ func createDatabaseRow(db *database.Database, table string, data map[string]any)
 		valuePlaceholders = append(valuePlaceholders, "?")
 	}
 
-	columnsStr := strings.Join(columns, ", ")
+	columnsStr := strings.Join(columns, "`, `")
 	valuesStr := strings.Join(valuePlaceholders, ", ")
 
-	query := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)", table, columnsStr, valuesStr)
+	query := fmt.Sprintf("INSERT INTO `%s` (`%s`) VALUES (%s)", table, columnsStr, valuesStr)
 	result, err := db.Db.Exec(query, values...)
 	if err != nil {
 		return 0, err
@@ -88,17 +88,15 @@ func createDatabaseRow(db *database.Database, table string, data map[string]any)
 
 func setupTables(ent ...interface{}) (func(), error) {
 	closeFunc := func() {
-		var err error
 		for _, e := range ent {
 			tableInfo, err := structParsing.GetTableInfo(e)
 			if err == nil {
-				_, err = db.Db.Exec("DROP TABLE " + tableInfo.Name)
+				_, err = db.Db.Exec(fmt.Sprintf("DROP TABLE `%s`", tableInfo.Name))
+			}
+			if err != nil {
+				panic(err)
 			}
 		}
-		if err != nil {
-			panic(err)
-		}
-		return
 	}
 
 	return closeFunc, database.BuildTables(db, ent...)
@@ -159,8 +157,8 @@ func seedTable(count int, table string, columns map[string]string) (map[int64]ma
 	}
 
 	valuesString := strings.Join(values, ", ")
-	columnsString := strings.Join(columnNames, ", ")
-	query := fmt.Sprintf("INSERT INTO %s (%s) VALUES %s", table, columnsString, valuesString)
+	columnsString := strings.Join(columnNames, "`, `")
+	query := fmt.Sprintf("INSERT INTO `%s` (`%s`) VALUES %s", table, columnsString, valuesString)
 	_, err := db.Db.Exec(query, args...)
 	return seededValues, err
 }
