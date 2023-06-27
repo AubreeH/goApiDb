@@ -8,11 +8,6 @@ import (
 	"strings"
 )
 
-type paginatedDetails struct {
-	itemsPerPage uint
-	pageNumber   uint
-}
-
 func (query *Query) Build() (baseQuery, paginationDetailsQuery string, baseQueryParams, paginationDetailsQueryParams []any, err error) {
 	switch query.operation {
 	case SelectKeyword:
@@ -62,16 +57,16 @@ func (query *Query) buildSelect() (string, string, []any, []any, error) {
 	}
 
 	limitStatement := ""
-	if query.limit != "" {
-		if query.offset == "" {
-			limitStatement = fmt.Sprintf(" LIMIT %s ", query.limit)
+	if query.limit != 0 {
+		if query.offset == 0 {
+			limitStatement = fmt.Sprintf(" LIMIT %d ", query.limit)
 		} else {
-			limitStatement = fmt.Sprintf(" LIMIT %s OFFSET %s ", query.limit, query.offset)
+			limitStatement = fmt.Sprintf(" LIMIT %d OFFSET %d ", query.limit, query.limit*query.offset)
 		}
 	}
 
 	q1 := fmt.Sprintf("SELECT %s FROM %s %s%s", query.selectStr, fromTable, q, limitStatement)
-	q2 := fmt.Sprintf("SELECT COUNT(ROW_NUMBER()) FROM %s %s", fromTable, q)
+	q2 := fmt.Sprintf("SELECT COUNT(*) FROM %s %s", fromTable, q)
 
 	q1, q1Args, err := replaceParams(query.params, q1)
 	if err != nil {
@@ -80,6 +75,10 @@ func (query *Query) buildSelect() (string, string, []any, []any, error) {
 	}
 
 	q2, q2Args, err := replaceParams(query.params, q2)
+	if err != nil {
+		query.Error = err
+		return "", "", nil, nil, err
+	}
 
 	q1 = strings.Trim(q1, " ")
 

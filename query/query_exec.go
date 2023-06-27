@@ -2,6 +2,7 @@ package query
 
 import (
 	"database/sql"
+	"fmt"
 	"reflect"
 
 	"github.com/AubreeH/goApiDb/database"
@@ -20,6 +21,7 @@ func (query *Query) exec(db *database.Database) error {
 	}
 
 	if paginationDetailsQuery != "" && paginationDetailsQueryParams != nil {
+		fmt.Println(paginationDetailsQuery)
 		pdqResults, err := db.Db.Query(paginationDetailsQuery, paginationDetailsQueryParams...)
 		if err != nil {
 			query.Error = err
@@ -43,6 +45,10 @@ func ExecuteQuery[T any](db *database.Database, query *Query, _ T) ([]T, error) 
 	if query.Error != nil {
 		return nil, query.Error
 	}
+
+	// if query.paginationDetailsQueryResult != nil {
+
+	// }
 
 	var output []T
 

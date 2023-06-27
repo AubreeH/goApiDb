@@ -1,21 +1,17 @@
 package query
 
-import (
-	"fmt"
-)
-
 func (query *Query) Limit(value uint) *Query {
-	query.limit = fmt.Sprintf("%d", value)
+	query.limit = value
 	return query
 }
 
 func (query *Query) Offset(value uint) *Query {
-	query.offset = fmt.Sprintf("%d", value)
+	query.offset = value
 	return query
 }
 
 func (query *Query) Paginated(itemsPerPage, offset uint) *Query {
-	query.limit = fmt.Sprintf("%d", itemsPerPage)
-	query.offset = fmt.Sprintf("%d", offset)
+	query.limit = itemsPerPage
+	query.offset = offset
 	return query
 }

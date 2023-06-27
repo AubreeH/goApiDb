@@ -28,8 +28,8 @@ type Query struct {
 	paginationDetailsQueryResult *sql.Rows
 	Error                        error
 	args                         []any
-	limit                        string
-	offset                       string
+	limit                        uint
+	offset                       uint
 }
 
 type join struct {
