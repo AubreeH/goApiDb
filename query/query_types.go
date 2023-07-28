@@ -14,19 +14,22 @@ const (
 )
 
 type Query struct {
-	operation string
-	query     string
-	selectStr string
-	from      string
-	joins     []join
-	clauses   string
-	params    map[string]parameter
-	tables    map[string]table
-	orderBy   string
-	groupBy   string
-	result    *sql.Rows
-	Error     error
-	args      []any
+	operation                    string
+	query                        string
+	selectStr                    string
+	from                         string
+	joins                        []join
+	clauses                      string
+	params                       map[string]parameter
+	tables                       map[string]table
+	orderBy                      string
+	groupBy                      string
+	result                       *sql.Rows
+	paginationDetailsQueryResult *sql.Rows
+	Error                        error
+	args                         []any
+	limit                        uint
+	offset                       uint
 }
 
 type join struct {

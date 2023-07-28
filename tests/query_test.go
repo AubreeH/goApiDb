@@ -102,3 +102,79 @@ func Test_QueryBuilder_Success(t *testing.T) {
 	t.Log("QueryBuilder Exec Duration", fmt.Sprint(duration, "µs"), "With", len(results), fmt.Sprintf("results (Average: %dµs)", duration/int64(len(results))))
 	assertError(t, err)
 }
+
+func Test_QueryBuilderPaginated_Success(t *testing.T) {
+	InitDb()
+
+	fmt.Println("Setting up table")
+	closeFunc, err := setupTables(testingEntity1{}, testingEntity2{}, testingEntity3{})
+	assertError(t, err)
+	defer closeFunc()
+	fmt.Println("Setting up table - Done")
+
+	fmt.Println("Seeding table")
+	_, err = seedTable(500, "test_entity_1", map[string]string{
+		"name":        "string",
+		"description": "string",
+		"created_at":  "time",
+		"updated_at":  "time",
+		"drop":        "time",
+	})
+	assertError(t, err)
+	fmt.Println("Seeding table - Done")
+
+	q := query.NewSelectQuery()
+	q.Select("te1.id", "te1.name")
+	q.From(testingEntity1{}, "te1")
+	allResults, err := query.ExecuteQuery(db, q, struct {
+		Id   int64
+		Name string
+	}{})
+	assertError(t, err)
+
+	q.Paginated(25, 0)
+	results1, err := query.ExecuteQuery(db, q, struct {
+		Id   int64
+		Name string
+	}{})
+	assertError(t, err)
+
+	q.Paginated(25, 1)
+	results2, err := query.ExecuteQuery(db, q, struct {
+		Id   int64
+		Name string
+	}{})
+	assertError(t, err)
+
+	assert(t,
+		condition(len(results1) > 25, "More values retrieved than limit"),
+		condition(len(results1) < 25, "Less values retrieved than limit"),
+		condition(!checkArraysEqual(results1, allResults[0:25]), "Results do not match", fmt.Sprintln(results1), fmt.Sprintln(allResults[0:25])),
+		condition(len(results2) > 25, "More values retrieved than limit"),
+		condition(len(results2) < 25, "Less values retrieved than limit"),
+		condition(!checkArraysEqual(results2, allResults[25:50]), "Results do not match", fmt.Sprintln(results2), fmt.Sprintln(allResults[0:25])),
+	)
+
+}
+
+func checkArraysEqual[T comparable](arrays ...[]T) bool {
+	if len(arrays) == 0 || len(arrays) == 1 {
+		return true
+	}
+
+	firstArray := arrays[0]
+
+	for _, a := range arrays[1:] {
+		if len(firstArray) != len(a) {
+			return false
+		}
+
+		for i, v := range a {
+			if v != firstArray[i] {
+				return false
+			}
+		}
+	}
+
+	return true
+}

@@ -1,5 +1,7 @@
 package query
 
+import "errors"
+
 func (query *Query) validateAlias(alias string) *Query {
 	if alias == "" {
 		panic("empty alias provided")
@@ -11,13 +13,13 @@ func (query *Query) validateAlias(alias string) *Query {
 	return query
 }
 
-func (query *Query) validateQuery() *Query {
+func (query *Query) validateQuery() error {
 	if query.selectStr == "" {
-		panic("select statement not provided")
+		return errors.New("select statement not provided")
 	}
 
 	if query.from == "" {
-		panic("from table not provided")
+		return errors.New("from table not provided")
 	}
-	return query
+	return nil
 }

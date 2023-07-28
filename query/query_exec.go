@@ -2,29 +2,53 @@ package query
 
 import (
 	"database/sql"
-	"github.com/AubreeH/goApiDb/database"
+	"fmt"
 	"reflect"
+
+	"github.com/AubreeH/goApiDb/database"
 )
 
-func (query *Query) Exec(db *database.Database) {
+func (query *Query) exec(db *database.Database) error {
 	query.Error = nil
 
-	query.Build()
+	_, paginationDetailsQuery, _, paginationDetailsQueryParams, err := query.Build()
+	if err != nil {
+		query.Error = err
+		return err
+	}
 	if query.Error != nil {
-		return
+		return query.Error
+	}
+
+	if paginationDetailsQuery != "" && paginationDetailsQueryParams != nil {
+		fmt.Println(paginationDetailsQuery)
+		pdqResults, err := db.Db.Query(paginationDetailsQuery, paginationDetailsQueryParams...)
+		if err != nil {
+			query.Error = err
+			return err
+		}
+		query.paginationDetailsQueryResult = pdqResults
 	}
 
 	result, err := db.Db.Query(query.query, query.args...)
-
+	if err != nil {
+		query.Error = err
+		return err
+	}
 	query.result = result
-	query.Error = err
+
+	return nil
 }
 
 func ExecuteQuery[T any](db *database.Database, query *Query, _ T) ([]T, error) {
-	query.Exec(db)
+	query.exec(db)
 	if query.Error != nil {
 		return nil, query.Error
 	}
+
+	// if query.paginationDetailsQueryResult != nil {
+
+	// }
 
 	var output []T
 

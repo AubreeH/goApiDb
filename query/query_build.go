@@ -1,39 +1,45 @@
 package query
 
 import (
+	"errors"
+	"fmt"
 	"regexp"
 	"sort"
 	"strings"
 )
 
-func (query *Query) Build() string {
+func (query *Query) Build() (baseQuery, paginationDetailsQuery string, baseQueryParams, paginationDetailsQueryParams []any, err error) {
 	switch query.operation {
 	case SelectKeyword:
 		return query.buildSelect()
 	case UpdateKeyword:
-		return query.buildUpdate()
+		return query.buildUpdate(), "", nil, nil, nil
 	}
 
-	return ""
+	return "", "", nil, nil, errors.New("operation not supported")
 }
 
-func (query *Query) buildSelect() string {
-	query.validateQuery()
+func (query *Query) buildSelect() (string, string, []any, []any, error) {
+	err := query.validateQuery()
+	if err != nil {
+		query.Error = err
+		return "", "", nil, nil, err
+	}
 
 	fromTable, err := query.tables[query.from].Format()
 	if err != nil {
 		query.Error = err
-		return ""
+		return "", "", nil, nil, err
 	}
-	q := "SELECT " + query.selectStr + " "
-	q += "FROM " + fromTable + " "
+
+	q := ""
 
 	for i := range query.joins {
 		j := query.joins[i]
 		join, err := j.Format(query)
 		if err != nil {
 			query.Error = err
-			return ""
+			return "", "", nil, nil, err
 		}
 		q += join + " "
 	}
@@ -50,17 +56,35 @@ func (query *Query) buildSelect() string {
 		q += "ORDER BY " + query.orderBy + " "
 	}
 
-	q, args, err := replaceParams(query.params, q)
-	if err != nil {
-		query.Error = err
-		return ""
+	limitStatement := ""
+	if query.limit != 0 {
+		if query.offset == 0 {
+			limitStatement = fmt.Sprintf(" LIMIT %d ", query.limit)
+		} else {
+			limitStatement = fmt.Sprintf(" LIMIT %d OFFSET %d ", query.limit, query.limit*query.offset)
+		}
 	}
 
-	q = strings.Trim(q, " ")
+	q1 := fmt.Sprintf("SELECT %s FROM %s %s%s", query.selectStr, fromTable, q, limitStatement)
+	q2 := fmt.Sprintf("SELECT COUNT(*) FROM %s %s", fromTable, q)
 
-	query.query = q
-	query.args = args
-	return q
+	q1, q1Args, err := replaceParams(query.params, q1)
+	if err != nil {
+		query.Error = err
+		return "", "", nil, nil, err
+	}
+
+	q2, q2Args, err := replaceParams(query.params, q2)
+	if err != nil {
+		query.Error = err
+		return "", "", nil, nil, err
+	}
+
+	q1 = strings.Trim(q1, " ")
+
+	query.query = q1
+	query.args = q1Args
+	return q1, q2, q1Args, q2Args, nil
 }
 
 func replaceParams(parameters map[string]parameter, q string) (string, []any, error) {
