@@ -2,6 +2,7 @@ package query
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"reflect"
 
@@ -46,10 +47,6 @@ func ExecuteQuery[T any](db *database.Database, query *Query, _ T) ([]T, error) 
 		return nil, query.Error
 	}
 
-	// if query.paginationDetailsQueryResult != nil {
-
-	// }
-
 	var output []T
 
 	result := query.result
@@ -64,6 +61,26 @@ func ExecuteQuery[T any](db *database.Database, query *Query, _ T) ([]T, error) 
 	}
 
 	return output, nil
+}
+
+func GetPaginationDetails(query *Query) (*GetPaginationDetailsResult, error) {
+	var output GetPaginationDetailsResult
+	var total int
+
+	if !query.paginationDetailsQueryResult.Next() {
+		return nil, errors.New("unable to read query result for pagination details")
+	}
+
+	err := query.paginationDetailsQueryResult.Scan(&total)
+	if err != nil {
+		return nil, err
+	}
+
+	output.Limit = int(query.limit)
+	output.Offset = int(query.offset)
+	output.TotalResults = total
+
+	return &output, nil
 }
 
 func GetRowArgs[T any](row *T) []any {

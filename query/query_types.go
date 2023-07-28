@@ -74,3 +74,9 @@ type parameter struct {
 	Name  string
 	Value any
 }
+
+type GetPaginationDetailsResult struct {
+	TotalResults int
+	Limit        int
+	Offset       int
+}
