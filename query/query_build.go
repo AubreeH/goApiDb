@@ -84,6 +84,9 @@ func (query *Query) buildSelect() (string, string, []any, []any, error) {
 
 	query.query = q1
 	query.args = q1Args
+
+	query.paginationDetailsQuery = q2
+	query.paginationDetailsQueryArgs = q2Args
 	return q1, q2, q1Args, q2Args, nil
 }
 

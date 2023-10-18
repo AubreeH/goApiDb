@@ -16,6 +16,8 @@ const (
 type Query struct {
 	operation                    string
 	query                        string
+	paginationDetailsQuery       string
+	paginationDetailsQueryArgs   []any
 	selectStr                    string
 	from                         string
 	joins                        []join
@@ -26,6 +28,7 @@ type Query struct {
 	groupBy                      string
 	result                       *sql.Rows
 	paginationDetailsQueryResult *sql.Rows
+	paginationDetailsOutput      *GetPaginationDetailsResult
 	Error                        error
 	args                         []any
 	limit                        uint
