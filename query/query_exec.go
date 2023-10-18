@@ -36,6 +36,8 @@ func ExecuteQuery[T any](db *database.Database, query *Query, _ T) ([]T, error) 
 		return nil, query.Error
 	}
 
+	defer query.result.Close()
+
 	var output []T
 
 	result := query.result
@@ -65,6 +67,9 @@ func GetPaginationDetails(db *database.Database, query *Query) (GetPaginationDet
 		query.Error = err
 		return output, err
 	}
+
+	defer pdqResults.Close()
+
 	query.paginationDetailsQueryResult = pdqResults
 	query.paginationDetailsOutput = nil
 

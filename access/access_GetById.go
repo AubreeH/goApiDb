@@ -59,6 +59,8 @@ func getById[T any](db *database.Database, entity T, id any, timed bool) (T, *Ti
 		return output, nil, err
 	}
 
+	defer result.Close()
+
 	if timed {
 		queryExecDurationEnd = time.Now()
 		formatResultDurationStart = time.Now()

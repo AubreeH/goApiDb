@@ -61,6 +61,8 @@ func getAll[T any](db *database.Database, entity T, limit int, timed bool) ([]T,
 		return nil, nil, err
 	}
 
+	defer result.Close()
+
 	if timed {
 		queryExecDurationEnd = time.Now()
 		formatResultDurationStart = time.Now()

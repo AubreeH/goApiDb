@@ -19,6 +19,8 @@ func GetTableSqlDescriptionFromDb(db *Database, tableName string) (structParsing
 		return structParsing.TablDesc{}, err
 	}
 
+	defer result.Close()
+
 	tableDescription := structParsing.TablDesc{Name: tableName}
 	for result.Next() {
 		colDesc := structParsing.ColDesc{}
@@ -103,6 +105,8 @@ func getKeyFromDb(db *Database, tableName string, col *structParsing.ColDesc) er
 	if err != nil {
 		return err
 	}
+
+	defer result.Close()
 
 	if result.Next() {
 		var constraintName string
