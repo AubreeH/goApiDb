@@ -60,33 +60,6 @@ func getDatabaseConfig() database.Config {
 	}
 }
 
-func createDatabaseRow(db *database.Database, table string, data map[string]any) (int, error) {
-	var columns []string
-	var values []any
-	var valuePlaceholders []string
-	for k, v := range data {
-		columns = append(columns, k)
-		values = append(values, v)
-		valuePlaceholders = append(valuePlaceholders, "?")
-	}
-
-	columnsStr := strings.Join(columns, "`, `")
-	valuesStr := strings.Join(valuePlaceholders, ", ")
-
-	query := fmt.Sprintf("INSERT INTO `%s` (`%s`) VALUES (%s)", table, columnsStr, valuesStr)
-	result, err := db.Db.Exec(query, values...)
-	if err != nil {
-		return 0, err
-	}
-
-	lastInsertId, err := result.LastInsertId()
-	if err != nil {
-		return 0, err
-	}
-
-	return int(lastInsertId), err
-}
-
 func setupTables(t *testing.T, doCleanup bool, ent ...interface{}) {
 	t.Helper()
 	t.Log("Setting up tables - START")
