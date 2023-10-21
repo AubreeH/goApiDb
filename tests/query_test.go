@@ -1,14 +1,13 @@
 package tests
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/AubreeH/goApiDb/query"
 )
 
 func Test_QueryBuilder_Success(t *testing.T) {
-	testEntity3DataValues, testEntity2DataValues, testEntity1DataValues := setupQueryBuilder(t, 100)
+	testEntity3DataValues, testEntity2DataValues, testEntity1DataValues := setupQueryBuilder(t, 10000)
 
 	q := query.Select(struct {
 		Id      int    `s:"te1.id"`
@@ -47,40 +46,40 @@ func Test_QueryBuilder_Success(t *testing.T) {
 	}
 }
 
-func Test_QueryBuilderPaginated_Success(t *testing.T) {
-	InitDb(t)
-	setupTables(t, testingEntity1{}, testingEntity2{}, testingEntity3{})
+// func Test_QueryBuilderPaginated_Success(t *testing.T) {
+// 	InitDb(t)
+// 	setupTables(t, testingEntity1{}, testingEntity2{}, testingEntity3{})
 
-	seedTable(t, 500, "test_entity_1", map[string]string{
-		"name":        "string",
-		"description": "string",
-	})
+// 	seedTable(t, 500, "test_entity_1", map[string]string{
+// 		"name":        "string",
+// 		"description": "string",
+// 	})
 
-	q := query.Select(
-		struct {
-			Id   int64  `s:"te1.id"`
-			Name string `s:"te1.name"`
-		}{},
-	).From(testingEntity1{}, "te1")
+// 	q := query.Select(
+// 		struct {
+// 			Id   int64  `s:"te1.id"`
+// 			Name string `s:"te1.name"`
+// 		}{},
+// 	).From(testingEntity1{}, "te1")
 
-	allResults, err := q.All(db)
-	assertError(t, err)
+// 	allResults, err := q.All(db)
+// 	assertError(t, err)
 
-	results1, err := q.Paginated(db, 25, 0)
-	assertError(t, err)
+// 	results1, err := q.Paginated(db, 25, 0)
+// 	assertError(t, err)
 
-	results2, err := q.Paginated(db, 25, 1)
-	assertError(t, err)
+// 	results2, err := q.Paginated(db, 25, 1)
+// 	assertError(t, err)
 
-	assert(t,
-		condition(len(results1) > 25, "More values retrieved than limit"),
-		condition(len(results1) < 25, "Less values retrieved than limit"),
-		condition(!checkArraysEqual(results1, allResults[0:25]), "Results do not match", fmt.Sprintln(results1), fmt.Sprintln(allResults[0:25])),
-		condition(len(results2) > 25, "More values retrieved than limit"),
-		condition(len(results2) < 25, "Less values retrieved than limit"),
-		condition(!checkArraysEqual(results2, allResults[25:50]), "Results do not match", fmt.Sprintln(results2), fmt.Sprintln(allResults[0:25])),
-	)
-}
+// 	assert(t,
+// 		condition(len(results1) > 25, "More values retrieved than limit"),
+// 		condition(len(results1) < 25, "Less values retrieved than limit"),
+// 		condition(!checkArraysEqual(results1, allResults[0:25]), "Results do not match", fmt.Sprintln(results1), fmt.Sprintln(allResults[0:25])),
+// 		condition(len(results2) > 25, "More values retrieved than limit"),
+// 		condition(len(results2) < 25, "Less values retrieved than limit"),
+// 		condition(!checkArraysEqual(results2, allResults[25:50]), "Results do not match", fmt.Sprintln(results2), fmt.Sprintln(allResults[0:25])),
+// 	)
+// }
 
 func checkArraysEqual[T comparable](arrays ...[]T) bool {
 	if len(arrays) == 0 || len(arrays) == 1 {

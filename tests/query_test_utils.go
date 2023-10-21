@@ -2,10 +2,10 @@ package tests
 
 import "testing"
 
-func setupQueryBuilder(t *testing.T, multiplier int) (map[int]map[string]any, map[int]map[string]any, map[int]map[string]any) {
+func setupQueryBuilder(t *testing.T, numEntries int) (map[int]map[string]any, map[int]map[string]any, map[int]map[string]any) {
 	InitDb(t)
-	setupTables(t, testingEntity1{}, testingEntity2{}, testingEntity3{})
-	_, testEntity3SeededValues := seedTable(t, 100*multiplier, "test_entity_3",
+	setupTables(t, true, testingEntity1{}, testingEntity2{}, testingEntity3{})
+	_, testEntity3SeededValues := seedTable(t, numEntries, "test_entity_3",
 		map[string]string{
 			"id":          "id",
 			"name":        "string",
@@ -27,7 +27,7 @@ func setupQueryBuilder(t *testing.T, multiplier int) (map[int]map[string]any, ma
 		}
 	}
 
-	_, testEntity2SeededValues := seedTable(t, 100*multiplier, "test_entity_2", map[string]string{
+	_, testEntity2SeededValues := seedTable(t, numEntries, "test_entity_2", map[string]string{
 		"id":              "id",
 		"name":            "string",
 		"description":     "string",
@@ -48,7 +48,7 @@ func setupQueryBuilder(t *testing.T, multiplier int) (map[int]map[string]any, ma
 		}
 	}
 
-	_, testEntity1SeededValues := seedTable(t, 100*multiplier, "test_entity_1", map[string]string{
+	_, testEntity1SeededValues := seedTable(t, numEntries, "test_entity_1", map[string]string{
 		"id":              "id",
 		"name":            "string",
 		"description":     "string",

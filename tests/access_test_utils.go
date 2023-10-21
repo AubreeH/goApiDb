@@ -37,7 +37,7 @@ type testingEntity3 struct {
 func setupGetById(t *testing.T) (output testingEntity1) {
 	t.Helper()
 	InitDb(t)
-	setupTables(t, testingEntity1{}, testingEntity2{}, testingEntity3{})
+	setupTables(t, true, testingEntity1{}, testingEntity2{}, testingEntity3{})
 	testEntityName := randSeq(20)
 	testEntityDescription := randSeq(20)
 	testEntityCreatedAt := time.Now()
@@ -48,16 +48,13 @@ func setupGetById(t *testing.T) (output testingEntity1) {
 
 	ids, _ := seedTable(t, 10000, tableInfo.Name,
 		map[string]string{
+			"id":          "id",
 			"name":        "string",
 			"description": "string",
-			"created_at":  "time",
-			"updated_at":  "time",
 		},
 		map[string]any{
 			"name":        testEntityName,
 			"description": testEntityDescription,
-			"created_at":  testEntityCreatedAt,
-			"updated_at":  testEntityUpdatedAt,
 		},
 	)
 	assertError(t, err)
@@ -76,16 +73,15 @@ func setupGetById(t *testing.T) (output testingEntity1) {
 func setupGetAll(t *testing.T) (expectedValue map[int]map[string]any) {
 	t.Helper()
 	InitDb(t)
-	setupTables(t, testingEntity1{}, testingEntity2{}, testingEntity3{})
+	setupTables(t, true, testingEntity1{}, testingEntity2{}, testingEntity3{})
 	tableInfo, err := structParsing.GetTableInfo(testingEntity1{})
 	if err != nil {
 		return nil
 	}
 	_, seededValues := seedTable(t, 10000, tableInfo.Name, map[string]string{
+		"id":          "id",
 		"name":        "string",
 		"description": "string",
-		"created_at":  "time",
-		"updated_at":  "time",
 	})
 	return seededValues
 }

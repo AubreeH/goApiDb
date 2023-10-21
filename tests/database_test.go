@@ -62,17 +62,13 @@ func Test_GetUpdateTableQueriesForEntities(t *testing.T) {
 func Test_BuildTables(t *testing.T) {
 	InitDb(t)
 
-	err := database.BuildTables(db, testingEntity1{}, testingEntity2{}, testingEntity3{})
-	assertError(t, err)
-
-	err = dropTable[testingEntity1]()
-	assertError(t, err)
-
-	err = dropTable[testingEntity2]()
-	assertError(t, err)
+	setupTables(t, true, testingEntity1{}, testingEntity2{}, testingEntity3{})
 }
 
 func Test_RunMigrations(t *testing.T) {
 	InitDb(t)
 	assertError(t, database.RunMigrations(db, "./testMigrations/"))
+	t.Cleanup(func() {
+		cleanupTables(t, testingEntity2{})
+	})
 }

@@ -87,19 +87,28 @@ func createDatabaseRow(db *database.Database, table string, data map[string]any)
 	return int(lastInsertId), err
 }
 
-func setupTables(t *testing.T, ent ...interface{}) {
+func setupTables(t *testing.T, doCleanup bool, ent ...interface{}) {
 	t.Helper()
 	t.Log("Setting up tables - START")
 	assertError(t, database.BuildTables(db, ent...))
-	t.Cleanup(func() {
-		for _, e := range ent {
-			tableInfo, err := structParsing.GetTableInfo(e)
-			assertError(t, err)
-			_, err = db.Db.Exec(fmt.Sprintf("DROP TABLE `%s`", tableInfo.Name))
-			assertError(t, err)
-		}
-	})
+	if doCleanup {
+		t.Cleanup(func() {
+			cleanupTables(t, ent...)
+		})
+	}
 	t.Log("Setting up tables - FINISH")
+}
+
+func cleanupTables(t *testing.T, ent ...interface{}) {
+	t.Helper()
+	t.Log("Cleaning up tables - START")
+	for _, e := range ent {
+		tableInfo, err := structParsing.GetTableInfo(e)
+		assertError(t, err)
+		_, err = db.Db.Exec(fmt.Sprintf("DROP TABLE `%s`", tableInfo.Name))
+		assertError(t, err)
+	}
+	t.Log("Cleaning up tables - FINISH")
 }
 
 func dropTable[T any]() error {
