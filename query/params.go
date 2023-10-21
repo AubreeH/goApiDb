@@ -1,4 +1,4 @@
-package newQuery
+package query
 
 import "regexp"
 

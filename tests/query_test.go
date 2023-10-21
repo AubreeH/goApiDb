@@ -3,164 +3,73 @@ package tests
 import (
 	"fmt"
 	"testing"
-	"time"
 
-	"github.com/AubreeH/goApiDb/newQuery"
 	"github.com/AubreeH/goApiDb/query"
 )
 
 func Test_QueryBuilder_Success(t *testing.T) {
-	InitDb()
+	testEntity3DataValues, testEntity2DataValues, testEntity1DataValues := setupQueryBuilder(t, 100)
 
-	fmt.Println("Setting up tables")
-	_, err := setupTables(testingEntity1{}, testingEntity2{}, testingEntity3{})
-	assertError(t, err)
-	// defer closeFunc()
-	fmt.Println("Setting up tables - Done")
-
-	fmt.Println("Seeding tables")
-	testEntity1Count := 0
-	testEntity2Count := 0
-	testEntity3Count := 0
-	for i := 0; i < 50; i++ {
-		id, _, err := seedTableWithValueInMiddle(50, "test_entity_3", map[string]string{
-			"name":        "string",
-			"description": "string",
-			"created_at":  "time",
-			"updated_at":  "time",
-		}, map[string]any{
-			"name":        randSeq(20),
-			"description": randSeq(20),
-			"created_at":  time.Now(),
-			"updated_at":  time.Now(),
-		})
-		assertError(t, err)
-
-		testEntity3Count += 5
-
-		if i%2 == 0 {
-			id, _, err := seedTableWithValueInMiddle(60, "test_entity_2", map[string]string{
-				"name":        "string",
-				"description": "string",
-				"created_at":  "time",
-				"updated_at":  "time",
-			}, map[string]any{
-				"name":            randSeq(20),
-				"description":     randSeq(20),
-				"test_entity3_id": id,
-				"created_at":      time.Now(),
-				"updated_at":      time.Now(),
-			})
-			assertError(t, err)
-
-			testEntity2Count += 60
-
-			if i%4 == 0 {
-				_, _, err := seedTableWithValueInMiddle(70, "test_entity_1", map[string]string{
-					"name":        "string",
-					"description": "string",
-					"created_at":  "time",
-					"updated_at":  "time",
-					"drop":        "time",
-				}, map[string]any{
-					"name":            randSeq(20),
-					"description":     randSeq(20),
-					"test_entity2_id": id,
-					"created_at":      time.Now(),
-					"updated_at":      time.Now(),
-					"drop":            time.Now(),
-				})
-				assertError(t, err)
-
-				testEntity1Count += 7
-			}
-		}
-	}
-	fmt.Printf("Seeding tables - Done (%d test_entity_3, %d test_entity_2, %d test_entity_1)\n", testEntity3Count, testEntity2Count, testEntity1Count)
-
-	fmt.Println("Querying")
-	start := time.Now()
-
-	// q := query.NewSelectQuery()
-	// q.Select("te2.name as Te2name", "te1.id as Id", "te1.name as Te1name", "te3.name as Te3name").
-	// 	From(testingEntity1{}, "te1").
-	// 	LeftJoin(testingEntity2{}, "te2", "te1.test_entity2_id = te2.id").
-	// 	LeftJoin(testingEntity3{}, "te3", "te2.test_entity3_id = te3.id").
-	// 	Where("te2.name IS NOT NULL").
-	// 	Where("te3.name IS NOT NULL")
-
-	// results, err := query.ExecuteQuery(db, q, struct {
-	// 	Te2name string
-	// 	Id      int64
-	// 	Te1name string
-	// 	Te3name string
-	// }{})
-	// assertError(t, err)
-
-	q := newQuery.Select(struct {
-		Te2name string `s:"te2.name"`
-		Id      int64  `s:"te1.id"`
+	q := query.Select(struct {
+		Id      int    `s:"te1.id"`
 		Te1name string `s:"te1.name"`
+		Te2name string `s:"te2.name"`
 		Te3name string `s:"te3.name"`
 	}{}).
 		From(testingEntity1{}, "te1").
 		LeftJoin(testingEntity2{}, "te2", "te1.test_entity2_id = te2.id").
 		LeftJoin(testingEntity3{}, "te3", "te2.test_entity3_id = te3.id").
-		Where("te2.name IS NOT NULL").
-		Where("te3.name IS NOT NULL")
+		Where(
+			"te2.name IS NOT NULL",
+			"te3.name IS NOT NULL",
+		)
 
 	results, err := q.All(db)
 	assertError(t, err)
 
-	end := time.Now()
-	fmt.Println("Querying - Done")
+	for _, v := range results {
 
-	duration := end.UnixMicro() - start.UnixMicro()
-	t.Log("QueryBuilder Exec Duration", fmt.Sprint(duration, "µs"), "With", len(results), fmt.Sprintf("results (Average: %dµs)", duration/int64(len(results))))
-	// assertError(t, err)
+		assert(t,
+			condition(v.Te1name == "", "te1.name is empty"),
+			condition(v.Te2name == "", "te2.name is empty"),
+			condition(v.Te3name == "", "te3.name is empty"),
+		)
+
+		te1DataValue := testEntity1DataValues[v.Id]
+		te2DataValue := testEntity2DataValues[te1DataValue["test_entity2_id"].(int)]
+		te3DataValue := testEntity3DataValues[te2DataValue["test_entity3_id"].(int)]
+
+		assert(t,
+			condition(te1DataValue["name"] != v.Te1name, "te1.name does not match"),
+			condition(te2DataValue["name"] != v.Te2name, "te2.name does not match"),
+			condition(te3DataValue["name"] != v.Te3name, "te3.name does not match"),
+		)
+	}
 }
 
 func Test_QueryBuilderPaginated_Success(t *testing.T) {
-	InitDb()
+	InitDb(t)
+	setupTables(t, testingEntity1{}, testingEntity2{}, testingEntity3{})
 
-	fmt.Println("Setting up table")
-	closeFunc, err := setupTables(testingEntity1{}, testingEntity2{}, testingEntity3{})
-	assertError(t, err)
-	defer closeFunc()
-	fmt.Println("Setting up table - Done")
-
-	fmt.Println("Seeding table")
-	_, err = seedTable(500, "test_entity_1", map[string]string{
+	seedTable(t, 500, "test_entity_1", map[string]string{
 		"name":        "string",
 		"description": "string",
-		"created_at":  "time",
-		"updated_at":  "time",
-		"drop":        "time",
 	})
-	assertError(t, err)
-	fmt.Println("Seeding table - Done")
 
-	q := query.NewSelectQuery()
-	q.Select("te1.id", "te1.name")
-	q.From(testingEntity1{}, "te1")
-	allResults, err := query.ExecuteQuery(db, q, struct {
-		Id   int64
-		Name string
-	}{})
-	assertError(t, err)
+	q := query.Select(
+		struct {
+			Id   int64  `s:"te1.id"`
+			Name string `s:"te1.name"`
+		}{},
+	).From(testingEntity1{}, "te1")
 
-	q.Paginated(25, 0)
-	results1, err := query.ExecuteQuery(db, q, struct {
-		Id   int64
-		Name string
-	}{})
+	allResults, err := q.All(db)
 	assertError(t, err)
 
-	q.Paginated(25, 1)
-	results2, err := query.ExecuteQuery(db, q, struct {
-		Id   int64
-		Name string
-	}{})
+	results1, err := q.Paginated(db, 25, 0)
+	assertError(t, err)
+
+	results2, err := q.Paginated(db, 25, 1)
 	assertError(t, err)
 
 	assert(t,
@@ -171,7 +80,6 @@ func Test_QueryBuilderPaginated_Success(t *testing.T) {
 		condition(len(results2) < 25, "Less values retrieved than limit"),
 		condition(!checkArraysEqual(results2, allResults[25:50]), "Results do not match", fmt.Sprintln(results2), fmt.Sprintln(allResults[0:25])),
 	)
-
 }
 
 func checkArraysEqual[T comparable](arrays ...[]T) bool {

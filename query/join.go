@@ -1,4 +1,4 @@
-package newQuery
+package query
 
 import (
 	"fmt"
@@ -58,5 +58,8 @@ func (j joins) format(pretty bool) string {
 	for _, join := range j {
 		out = append(out, join.format(pretty))
 	}
-	return strings.Join(out, "\n")
+	if pretty {
+		return strings.Join(out, "\n")
+	}
+	return strings.Join(out, " ")
 }

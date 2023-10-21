@@ -1,4 +1,4 @@
-package newQuery
+package query
 
 import "strings"
 
@@ -24,7 +24,7 @@ func (q *query[T]) WhereBuilder(function func(w *Where)) *query[T] {
 
 func (q *query[T]) Where(statements ...string) *query[T] {
 	q.where.clauseType = andClause
-	q.where.statements = statements
+	q.where.statements = append(q.where.statements, statements...)
 	return q
 }
 
@@ -53,5 +53,10 @@ func (w Where) format(pretty bool) string {
 	for _, where := range w.wheres {
 		out = append(out, where.format(pretty))
 	}
-	return "(" + strings.Join(out, ") "+string(w.clauseType)+"(") + ")"
+
+	val := strings.Join(out, ") "+string(w.clauseType)+"(")
+	if len(out) > 1 {
+		return "(" + val + ")"
+	}
+	return ""
 }

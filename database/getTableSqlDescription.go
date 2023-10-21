@@ -55,7 +55,7 @@ func GetUpdateTableQueriesForEntity[TEntity any](db *Database, entity TEntity) (
 
 	dbDesc, err := GetTableSqlDescriptionFromDb(db, entityDesc.Name)
 	if err != nil {
-		if strings.Index(err.Error(), "Error 1146 (42S02)") == -1 {
+		if !strings.Contains(err.Error(), "Error 1146 (42S02)") {
 			return "", nil, nil, err
 		}
 

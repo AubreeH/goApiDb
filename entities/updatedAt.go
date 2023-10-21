@@ -1,12 +1,13 @@
 package entities
 
 import (
-	"github.com/AubreeH/goApiDb/dataTypes"
 	"time"
+
+	"github.com/AubreeH/goApiDb/dataTypes"
 )
 
 type UpdatedAt struct {
-	UpdatedAt dataTypes.Time `json:"updated_at" db_type:"DATETIME" db_nullable:"false" db_disallow_external_modification:"true" parse_struct:"false"`
+	UpdatedAt dataTypes.Time `json:"updated_at" db_type:"DATETIME" db_nullable:"false" db_disallow_external_modification:"true" parse_struct:"false" db_default:"CURRENT_TIMESTAMP"`
 }
 
 func (val UpdatedAt) OnCreate() (UpdatedAt, error) {

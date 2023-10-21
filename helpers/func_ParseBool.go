@@ -22,5 +22,5 @@ func ParseBool(value string) bool {
 		return false
 	}
 
-	panic("unable to parse bool")
+	return false
 }

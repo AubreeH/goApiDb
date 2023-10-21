@@ -1,4 +1,4 @@
-package newQuery
+package query
 
 type operation string
 

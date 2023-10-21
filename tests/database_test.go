@@ -1,12 +1,13 @@
 package tests
 
 import (
-	"github.com/AubreeH/goApiDb/database"
 	"testing"
+
+	"github.com/AubreeH/goApiDb/database"
 )
 
 func Test_GetTableSqlDescription(t *testing.T) {
-	InitDb()
+	InitDb(t)
 
 	tableSql, constraintsToAdd, constraintsToDrop, err := database.GetUpdateTableQueriesForEntity(db, testingEntity3{})
 	assertError(t, err)
@@ -31,7 +32,7 @@ func Test_GetTableSqlDescription(t *testing.T) {
 }
 
 func Test_GetUpdateTableQueriesForEntities(t *testing.T) {
-	InitDb()
+	InitDb(t)
 
 	tableQueries, addConstraintsQueries, dropConstraintsQueries, err := database.GetUpdateTableQueriesForEntities(db, testingEntity1{}, testingEntity2{}, testingEntity3{})
 	assertError(t, err)
@@ -59,7 +60,7 @@ func Test_GetUpdateTableQueriesForEntities(t *testing.T) {
 }
 
 func Test_BuildTables(t *testing.T) {
-	InitDb()
+	InitDb(t)
 
 	err := database.BuildTables(db, testingEntity1{}, testingEntity2{}, testingEntity3{})
 	assertError(t, err)
@@ -72,8 +73,6 @@ func Test_BuildTables(t *testing.T) {
 }
 
 func Test_RunMigrations(t *testing.T) {
-	InitDb()
-
-	err := database.RunMigrations(db, "./testMigrations/")
-	assertError(t, err)
+	InitDb(t)
+	assertError(t, database.RunMigrations(db, "./testMigrations/"))
 }

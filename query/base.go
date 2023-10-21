@@ -1,4 +1,4 @@
-package newQuery
+package query
 
 import (
 	"fmt"
@@ -43,13 +43,27 @@ func SelectDistinct[T any](s T) *query[T] {
 func (q *query[T]) format(pretty bool) string {
 
 	var out []string
-	out = append(out, q.formatSelect(pretty))
-	out = append(out, q.from.format(pretty))
-	out = append(out, q.joins.format(pretty))
-	out = append(out, "WHERE "+q.where.format(pretty))
-	out = append(out, q.groupBy.format(pretty))
-	out = append(out, q.orderBy.format(pretty))
-	out = append(out, q.limit.format(pretty))
+	if selectStatement := q.formatSelect(pretty); selectStatement != "" {
+		out = append(out, selectStatement)
+	}
+	if fromStatement := q.from.format(pretty); fromStatement != "" {
+		out = append(out, fromStatement)
+	}
+	if joinsStatement := q.joins.format(pretty); joinsStatement != "" {
+		out = append(out, joinsStatement)
+	}
+	if whereStatement := q.formatWhere(pretty); whereStatement != "" {
+		out = append(out, whereStatement)
+	}
+	if groupByStatement := q.groupBy.format(pretty); groupByStatement != "" {
+		out = append(out, groupByStatement)
+	}
+	if orderByStatement := q.orderBy.format(pretty); orderByStatement != "" {
+		out = append(out, orderByStatement)
+	}
+	if limitStatement := q.limit.format(pretty); limitStatement != "" {
+		out = append(out, limitStatement)
+	}
 
 	if pretty {
 		return strings.Join(out, "\n")
@@ -80,4 +94,12 @@ func (q *query[T]) formatSelect(pretty bool) string {
 	} else {
 		return fmt.Sprintf("SELECT %s", formattedColumns)
 	}
+}
+
+func (q *query[T]) formatWhere(pretty bool) string {
+	val := q.where.format(pretty)
+	if val == "" {
+		return ""
+	}
+	return "WHERE " + val
 }
