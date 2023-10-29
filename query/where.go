@@ -55,7 +55,7 @@ func (w Where) format(pretty bool) string {
 	}
 
 	val := strings.Join(out, ") "+string(w.clauseType)+"(")
-	if len(out) > 1 {
+	if len(out) > 0 {
 		return "(" + val + ")"
 	}
 	return ""
