@@ -2,15 +2,17 @@ package structParsing
 
 import (
 	"errors"
+	"reflect"
+
 	"github.com/AubreeH/goApiDb/entities"
 	"github.com/AubreeH/goApiDb/helpers"
-	"reflect"
 )
 
 type TableInfo struct {
 	Name        string
 	SoftDeletes string
 	IsValid     bool
+	PrimaryKey  string
 }
 
 var entityBaseType = reflect.TypeOf(entities.EntityBase{})
@@ -44,6 +46,8 @@ func GetTableInfo(entity interface{}) (TableInfo, error) {
 		return TableInfo{}, errors.New("no entity base in struct")
 	}
 
+	tableInfo.PrimaryKey = getPrimaryKey(entityVal, entityType)
+
 	return tableInfo, nil
 }
 
@@ -64,4 +68,22 @@ func getInfo(tableInfo *TableInfo, entityValue reflect.Value, baseType reflect.T
 			}
 		}
 	}
+}
+
+func getPrimaryKey(entityValue reflect.Value, baseType reflect.Type) string {
+	entityType := entityValue.Type()
+	for i := 0; i < entityType.NumField(); i++ {
+		field := entityType.Field(i)
+		fieldValue := entityValue.Field(i)
+
+		if FormatKey(field.Tag.Get(SqlKey)) == "PRIMARY KEY" {
+			return FormatSqlName(field)
+		} else if fieldValue.Kind() == reflect.Struct && FormatParseStruct(field) {
+			pk := getPrimaryKey(fieldValue, baseType)
+			if pk != "" {
+				return pk
+			}
+		}
+	}
+	return ""
 }

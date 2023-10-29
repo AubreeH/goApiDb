@@ -43,6 +43,8 @@ func create[T any](db *database.Database, values []T, timed bool) (T, *TimedResu
 	queryValues := ""
 	var args []any
 
+	var id interface{}
+
 	for i := range values {
 		var rowData []ColumnData
 		rowData, err = GetData(values[i], createOperationHandler)
@@ -52,6 +54,10 @@ func create[T any](db *database.Database, values []T, timed bool) (T, *TimedResu
 
 		for j := range rowData {
 			columnData := rowData[j]
+
+			if columnData.Column == tableInfo.PrimaryKey {
+				id = columnData.Data
+			}
 
 			if queryColumns == "" {
 				queryColumns += columnData.Column
@@ -77,26 +83,29 @@ func create[T any](db *database.Database, values []T, timed bool) (T, *TimedResu
 		return entity, nil, err
 	}
 
-	id, err := result.LastInsertId()
-	if err != nil {
+	if lastInsertId, err := result.LastInsertId(); err != nil {
 		return entity, nil, err
+	} else if lastInsertId != 0 {
+		id = lastInsertId
 	}
 
-	out, _, err := getById(db, entity, id, false)
-	if err != nil {
-		return entity, nil, err
+	if id != nil {
+		entity, _, err := getById(db, entity, id, false)
+		if err != nil {
+			return entity, nil, err
+		}
 	}
 
 	if timed {
 		queryExecDurationEnd = time.Now()
 		overallDurationEnd = time.Now()
 
-		return out, &TimedResult{
+		return entity, &TimedResult{
 			BuildQueryDuration: buildQueryDurationEnd.UnixMicro() - buildQueryDurationStart.UnixMicro(),
 			QueryExecDuration:  queryExecDurationStart.UnixMicro() - queryExecDurationEnd.UnixMicro(),
 			OverallDuration:    overallDurationStart.UnixMicro() - overallDurationEnd.UnixMicro(),
 		}, nil
 	}
 
-	return out, nil, err
+	return entity, nil, err
 }
