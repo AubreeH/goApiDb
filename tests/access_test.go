@@ -82,3 +82,42 @@ func Test_Delete_Success(t *testing.T) {
 		condition(entity.Description != "", "description is set"),
 	)
 }
+
+func Test_Create_Success(t *testing.T) {
+	InitDb(t)
+	setupTables(t, false, testingEntity3{})
+
+	testEntityName := randSeq(20)
+	testEntityDescription := randSeq(20)
+
+	testEntity := testingEntity3{
+		Name:        testEntityName,
+		Description: testEntityDescription,
+	}
+
+	e1, err := access.Create(db, testEntity)
+	assertError(t, err)
+
+	var e2 testingEntity3
+	rows, err := db.Db.Query("SELECT id, name, description FROM test_entity_3 WHERE id = ?", e1.Id)
+	assertError(t, err)
+	for rows.Next() {
+		err := rows.Scan(&e2.Id, &e2.Name, &e2.Description)
+		assertError(t, err)
+	}
+
+	assert(t,
+		e(err),
+
+		condition(e1.Id == 0, "id is set"),
+		condition(e1.Name == "", "name is set"),
+		condition(e1.Description == "", "description is set"),
+
+		condition(e2.Id != e1.Id, "ids do not match"),
+		condition(e2.Name != testEntityName, "name does not match"),
+		condition(e2.Description != testEntityDescription, "description does not match"),
+
+		condition(e1.Name != testEntityName, "name does not match"),
+		condition(e1.Description != testEntityDescription, "description does not match"),
+	)
+}

@@ -8,17 +8,19 @@ import (
 	"github.com/AubreeH/goApiDb/structParsing"
 )
 
-func Create[T any](db *database.Database, values []T) error {
-	_, err := create[T](db, values, false)
-	return err
+// Create new records in the database. Returns the last inserted value.
+func Create[T any](db *database.Database, values ...T) (T, error) {
+	out, _, err := create[T](db, values, false)
+	return out, err
 }
 
-func CreateTimed[T any](db *database.Database, values []T) (*TimedResult, error) {
-	timedResult, err := create[T](db, values, true)
-	return timedResult, err
+// Create new records in the database. Returns the last inserted value.
+func CreateTimed[T any](db *database.Database, values ...T) (T, *TimedResult, error) {
+	out, timedResult, err := create[T](db, values, true)
+	return out, timedResult, err
 }
 
-func create[T any](db *database.Database, values []T, timed bool) (*TimedResult, error) {
+func create[T any](db *database.Database, values []T, timed bool) (T, *TimedResult, error) {
 	var overallDurationStart time.Time
 	var overallDurationEnd time.Time
 	var buildQueryDurationStart time.Time
@@ -34,7 +36,7 @@ func create[T any](db *database.Database, values []T, timed bool) (*TimedResult,
 	var entity T
 	tableInfo, err := structParsing.GetTableInfo(entity)
 	if err != nil {
-		return nil, err
+		return entity, nil, err
 	}
 
 	queryColumns := ""
@@ -45,7 +47,7 @@ func create[T any](db *database.Database, values []T, timed bool) (*TimedResult,
 		var rowData []ColumnData
 		rowData, err = GetData(values[i], createOperationHandler)
 		if err != nil {
-			return nil, err
+			return entity, nil, err
 		}
 
 		for j := range rowData {
@@ -63,28 +65,38 @@ func create[T any](db *database.Database, values []T, timed bool) (*TimedResult,
 		}
 	}
 
-	query := fmt.Sprintf("INSERT"+" INTO %s (%s) values (%s)", tableInfo.Name, queryColumns, queryValues)
+	query := fmt.Sprintf("INSERT INTO %s (%s) values (%s)", tableInfo.Name, queryColumns, queryValues)
 
 	if timed {
 		buildQueryDurationEnd = time.Now()
 		queryExecDurationStart = time.Now()
 	}
 
-	_, err = db.Db.Exec(query, args...)
+	result, err := db.Db.Exec(query, args...)
 	if err != nil {
-		return nil, err
+		return entity, nil, err
+	}
+
+	id, err := result.LastInsertId()
+	if err != nil {
+		return entity, nil, err
+	}
+
+	out, _, err := getById(db, entity, id, false)
+	if err != nil {
+		return entity, nil, err
 	}
 
 	if timed {
 		queryExecDurationEnd = time.Now()
 		overallDurationEnd = time.Now()
 
-		return &TimedResult{
+		return out, &TimedResult{
 			BuildQueryDuration: buildQueryDurationEnd.UnixMicro() - buildQueryDurationStart.UnixMicro(),
 			QueryExecDuration:  queryExecDurationStart.UnixMicro() - queryExecDurationEnd.UnixMicro(),
 			OverallDuration:    overallDurationStart.UnixMicro() - overallDurationEnd.UnixMicro(),
 		}, nil
 	}
 
-	return nil, err
+	return out, nil, err
 }
