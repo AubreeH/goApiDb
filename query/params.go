@@ -19,3 +19,12 @@ func (p params) parse(q string) (string, []any) {
 
 	return paramRegex.ReplaceAllString(q, "?"), out
 }
+
+func (q query) SetParam(key string, value any) query {
+	if q.params == nil {
+		q.params = make(params)
+	}
+
+	q.params[key] = value
+	return q
+}
