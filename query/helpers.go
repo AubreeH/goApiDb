@@ -85,7 +85,7 @@ func scanRow[TScanType any](rs *sql.Rows) (TScanType, error) {
 	return *row, nil
 }
 
-func tempSet(ptr interface{}, value interface{}) func() {
+func tempSet[T any](ptr *T, value T) func() {
 	refVal := reflect.ValueOf(ptr).Elem()
 	oldVal := refVal.Interface()
 	refVal.Set(reflect.ValueOf(value))
