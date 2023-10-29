@@ -90,7 +90,7 @@ func create[T any](db *database.Database, values []T, timed bool) (T, *TimedResu
 	}
 
 	if id != nil {
-		entity, _, err := getById(db, entity, id, false)
+		entity, _, err = getById(db, entity, id, false)
 		if err != nil {
 			return entity, nil, err
 		}
