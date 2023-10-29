@@ -77,6 +77,10 @@ func scanRow[TScanType any](rs *sql.Rows) (TScanType, error) {
 		return out, err
 	}
 
+	if !rs.Next() {
+		return out, nil
+	}
+
 	err = rs.Scan(rowArgs...)
 	if err != nil {
 		return out, err
