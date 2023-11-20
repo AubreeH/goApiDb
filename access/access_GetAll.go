@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/AubreeH/goApiDb/database"
+	"github.com/AubreeH/goApiDb/helpers"
 	"github.com/AubreeH/goApiDb/structParsing"
 )
 
@@ -76,7 +77,7 @@ func getAll[T any](db database.DbInstance, entity T, limit int, timed bool) ([]T
 		}
 		err = result.Scan(args...)
 		if entityOutput != nil {
-			retValue = append(retValue, reflect.ValueOf(entityOutput).Elem().Interface().(T))
+			retValue = append(retValue, helpers.GetRootValue(reflect.ValueOf(entityOutput)).Interface().(T))
 		}
 	}
 

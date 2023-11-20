@@ -4,26 +4,40 @@ import (
 	"database/sql"
 	"reflect"
 
+	"github.com/AubreeH/goApiDb/helpers"
 	"github.com/AubreeH/goApiDb/structParsing"
 )
 
-func getEntityConstruction[T any](entity *T) (map[string]any, T, string, error) {
-	val := reflect.ValueOf(entity).Elem()
+func BuildRow[T interface{}](entity T, result *sql.Rows) ([]interface{}, *T, error) {
+	columnVariables, ptr, _, err := getEntityConstruction(&entity)
+	if err != nil {
+		return nil, ptr, err
+	}
+	resultColumns, err := result.Columns()
+	if err != nil {
+		return nil, ptr, err
+	}
+	columns := resultColumns
 
-	tmp := reflect.New(val.Elem().Type()).Elem()
-	tmp.Set(val.Elem())
+	retArgs := make([]interface{}, len(columns))
+	for i := 0; i < len(columns); i++ {
+		retArgs[i] = columnVariables[columns[i]]
+	}
+
+	return retArgs, ptr, nil
+}
+
+func getEntityConstruction[T any](entity *T) (map[string]any, *T, string, error) {
+	val := helpers.GetRootValue(reflect.ValueOf(entity))
+	tmp := helpers.GetRootValue(reflect.New(val.Type()))
+	tmp.Set(val)
 
 	columnVariables := make(map[string]any)
 	getColumnsFromStruct(tmp, columnVariables)
 
-	currentValue := reflect.ValueOf(entity).Elem().Interface()
-	tableInfo, err := structParsing.GetTableInfo(currentValue)
-	if err != nil {
-		var output T
-		return nil, output, "", err
-	}
+	tableName := structParsing.GetTableName(entity)
 
-	return columnVariables, tmp.Addr().Interface().(T), tableInfo.Name, nil
+	return columnVariables, tmp.Addr().Interface().(*T), tableName, nil
 }
 
 func getColumnsFromStruct(refValue reflect.Value, columnVariables map[string]any) map[string]any {
@@ -41,8 +55,8 @@ func getColumnsFromStruct(refValue reflect.Value, columnVariables map[string]any
 		sqlName := structParsing.FormatSqlName(field)
 		if getPtrFunc.IsValid() {
 			result := getPtrFunc.Call([]reflect.Value{valueField.Addr()})[0]
-			if result.Elem().Kind() == reflect.Map {
-				val := result.Elem().Interface().(map[string]any)
+			if helpers.GetRootValue(result).Kind() == reflect.Map {
+				val := helpers.GetRootValue(result).Interface().(map[string]any)
 				for s, p := range val {
 					columnVariables[s] = p
 				}
@@ -56,23 +70,4 @@ func getColumnsFromStruct(refValue reflect.Value, columnVariables map[string]any
 		}
 	}
 	return columnVariables
-}
-
-func BuildRow(entity interface{}, result *sql.Rows) ([]interface{}, interface{}, error) {
-	columnVariables, ptr, _, err := getEntityConstruction(&entity)
-	if err != nil {
-		return nil, ptr, err
-	}
-	resultColumns, err := result.Columns()
-	if err != nil {
-		return nil, ptr, err
-	}
-	columns := resultColumns
-
-	retArgs := make([]interface{}, len(columns))
-	for i := 0; i < len(columns); i++ {
-		retArgs[i] = columnVariables[columns[i]]
-	}
-
-	return retArgs, ptr, nil
 }

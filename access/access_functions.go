@@ -1,12 +1,14 @@
 package access
 
 import (
-	"github.com/AubreeH/goApiDb/structParsing"
 	"reflect"
+
+	"github.com/AubreeH/goApiDb/helpers"
+	"github.com/AubreeH/goApiDb/structParsing"
 )
 
 func MergeObjects[T any](base T, merger T) T {
-	baseValue := reflect.ValueOf(&base).Elem()
+	baseValue := helpers.GetRootValue(reflect.ValueOf(&base))
 	mergerValue := reflect.ValueOf(merger)
 
 	mergeDataFuncMethod := baseValue.MethodByName("MergeDataFunc")
@@ -14,7 +16,7 @@ func MergeObjects[T any](base T, merger T) T {
 	if mergeDataFuncMethod.IsValid() {
 		baseValue = mergeDataFuncMethod.Call([]reflect.Value{mergerValue})[0]
 		if baseValue.Kind() == reflect.Pointer {
-			return baseValue.Elem().Interface().(T)
+			return helpers.GetRootValue(baseValue).Interface().(T)
 		}
 		return baseValue.Interface().(T)
 	}

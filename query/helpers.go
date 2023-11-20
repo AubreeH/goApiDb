@@ -3,10 +3,12 @@ package query
 import (
 	"database/sql"
 	"reflect"
+
+	"github.com/AubreeH/goApiDb/helpers"
 )
 
 func resetStruct[T any](r *T) {
-	refVal := reflect.ValueOf(r).Elem()
+	refVal := helpers.GetRootValue(reflect.ValueOf(r))
 	refVal.Set(reflect.Zero(refVal.Type()))
 }
 
@@ -31,7 +33,7 @@ func getScannableRow[TScanType any](rs *sql.Rows) (*TScanType, []interface{}, er
 func getPointers[T any](s *T) map[string]interface{} {
 	out := make(map[string]interface{})
 
-	refVal := reflect.ValueOf(s).Elem()
+	refVal := helpers.GetRootValue(reflect.ValueOf(s))
 
 	for i := 0; i < refVal.NumField(); i++ {
 		field := refVal.Type().Field(i)
@@ -90,7 +92,7 @@ func scanRow[TScanType any](rs *sql.Rows) (TScanType, error) {
 }
 
 func tempSet[T any](ptr *T, value T) func() {
-	refVal := reflect.ValueOf(ptr).Elem()
+	refVal := helpers.GetRootValue(reflect.ValueOf(ptr))
 	oldVal := refVal.Interface()
 	refVal.Set(reflect.ValueOf(value))
 

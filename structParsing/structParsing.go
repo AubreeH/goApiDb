@@ -3,8 +3,9 @@ package structParsing
 import (
 	"errors"
 	"fmt"
-	"github.com/AubreeH/goApiDb/helpers"
 	"reflect"
+
+	"github.com/AubreeH/goApiDb/helpers"
 )
 
 func GetTableSqlDescriptionFromEntity[TEntity interface{}](entity TEntity) (tablDesc TablDesc, err error) {
@@ -16,16 +17,11 @@ func GetTableSqlDescriptionFromEntity[TEntity interface{}](entity TEntity) (tabl
 
 	tableDescription := TablDesc{}
 
-	refValue := reflect.ValueOf(entity)
+	refValue := helpers.GetRootValue(reflect.ValueOf(entity))
 	refType := refValue.Type()
 
 	if !refValue.IsValid() {
 		return TablDesc{}, errors.New("this value is invalid")
-	}
-
-	if refType.Kind() == reflect.Interface {
-		refValue = refValue.Elem()
-		refType = refValue.Type()
 	}
 
 	if refType.Kind() != reflect.Struct {

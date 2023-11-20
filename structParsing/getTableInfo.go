@@ -17,17 +17,21 @@ type TableInfo struct {
 
 var entityBaseType = reflect.TypeOf(entities.EntityBase{})
 
-func GetTableInfo(entity interface{}) (TableInfo, error) {
-	entityVal := reflect.ValueOf(entity)
+func GetTableName(entity interface{}) string {
+	refValue := helpers.GetRootValue(reflect.ValueOf(entity))
+	refType := refValue.Type()
 
-	if entityVal.Kind() == reflect.Ptr || entityVal.Kind() == reflect.Interface {
-		entityVal = entityVal.Elem()
+	tableInfo := TableInfo{}
+	getInfo(&tableInfo, refValue, refType)
 
-		if entityVal.Kind() == reflect.Interface {
-			entityVal = entityVal.Elem()
-		}
+	if tableInfo.Name == "" {
+		return helpers.GetTableName(entity)
 	}
+	return tableInfo.Name
+}
 
+func GetTableInfo(entity interface{}) (TableInfo, error) {
+	entityVal := helpers.GetRootValue(reflect.ValueOf(entity))
 	entityType := entityVal.Type()
 
 	if entityType.Kind() != reflect.Struct {

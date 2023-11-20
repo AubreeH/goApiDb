@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/AubreeH/goApiDb/database"
+	"github.com/AubreeH/goApiDb/helpers"
 	"github.com/AubreeH/goApiDb/structParsing"
 )
 
@@ -80,7 +81,7 @@ func getById[T any](db database.DbInstance, entity T, id any, timed bool) (T, *T
 		return output, nil, err
 	}
 
-	output = reflect.ValueOf(entityOutput).Elem().Interface().(T)
+	output = helpers.GetRootValue(reflect.ValueOf(entityOutput)).Interface().(T)
 
 	if timed {
 		formatResultDurationEnd = time.Now()
