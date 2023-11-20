@@ -130,7 +130,7 @@ func Test_Create_WithDbObject_Success(t *testing.T) {
 
 func Test_Create_WithTransactionObject(t *testing.T) {
 	InitDb(t)
-	setupTables(t, false, testingEntity2{}, testingEntity3{})
+	setupTables(t, true, testingEntity2{}, testingEntity3{})
 
 	testEntity1Name := randSeq(20)
 	testEntity1Description := randSeq(20)
