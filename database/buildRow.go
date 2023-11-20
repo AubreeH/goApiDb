@@ -27,7 +27,6 @@ func getEntityConstruction[T any](entity *T) (map[string]any, T, string, error) 
 }
 
 func getColumnsFromStruct(refValue reflect.Value, columnVariables map[string]any) map[string]any {
-
 	numFields := refValue.NumField()
 	for i := 0; i < numFields; i++ {
 		field := refValue.Type().Field(i)
@@ -59,23 +58,16 @@ func getColumnsFromStruct(refValue reflect.Value, columnVariables map[string]any
 	return columnVariables
 }
 
-func BuildRow(db *Database, entity interface{}, result *sql.Rows) ([]interface{}, interface{}, error) {
-	columnVariables, ptr, tableName, err := getEntityConstruction(&entity)
+func BuildRow(entity interface{}, result *sql.Rows) ([]interface{}, interface{}, error) {
+	columnVariables, ptr, _, err := getEntityConstruction(&entity)
 	if err != nil {
 		return nil, ptr, err
 	}
-
-	var columns []string
-	if db.tableColumns[tableName] != nil {
-		columns = db.tableColumns[tableName]
-	} else {
-		resultColumns, err := result.Columns()
-		if err != nil {
-			return nil, ptr, err
-		}
-		db.tableColumns[tableName] = resultColumns
-		columns = resultColumns
+	resultColumns, err := result.Columns()
+	if err != nil {
+		return nil, ptr, err
 	}
+	columns := resultColumns
 
 	retArgs := make([]interface{}, len(columns))
 	for i := 0; i < len(columns); i++ {

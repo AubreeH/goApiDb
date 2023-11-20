@@ -90,7 +90,7 @@ func dropTable[T any]() error {
 	if err != nil {
 		return err
 	}
-	_, err = db.Db.Exec("DROP TABLE " + tableInfo.Name)
+	_, err = db.Db.Exec(fmt.Sprintf("DROP TABLE `%s`", tableInfo.Name))
 	if err != nil {
 		return err
 	}
@@ -236,18 +236,10 @@ func assert(t *testing.T, conditions ...c) {
 }
 
 func assertError(t *testing.T, err error) {
-	_, file, line, _ := runtime.Caller(1)
-	assert(t, condition(err != nil, fmt.Sprintf("Error in %s on line %d: ", file, line), err))
+	assert(t, e(err))
 }
 
 func e(err error) c {
 	_, file, line, _ := runtime.Caller(1)
 	return condition(err != nil, fmt.Sprintf("Error in %s on line %d: ", file, line), err)
-}
-
-func p(args ...any) {
-	_, file, line, _ := runtime.Caller(1)
-	output := []any{fmt.Sprintf("%s:%d: ", filepath.Base(file), line)}
-	output = append(output, args...)
-	fmt.Print(output...)
 }

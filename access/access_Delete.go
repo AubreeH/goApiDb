@@ -8,16 +8,16 @@ import (
 	"github.com/AubreeH/goApiDb/structParsing"
 )
 
-func Delete[T any](db *database.Database, entity T, id any) error {
+func Delete[T any](db database.DbInstance, entity T, id any) error {
 	_, err := delete[T](db, entity, id, false)
 	return err
 }
 
-func DeleteTimed[T any](db *database.Database, entity T, id any) (*TimedResult, error) {
+func DeleteTimed[T any](db database.DbInstance, entity T, id any) (*TimedResult, error) {
 	return delete[T](db, entity, id, true)
 }
 
-func delete[T any](db *database.Database, entity T, id any, timed bool) (*TimedResult, error) {
+func delete[T any](db database.DbInstance, entity T, id any, timed bool) (*TimedResult, error) {
 	var overallDurationStart time.Time
 	var overallDurationEnd time.Time
 	var buildQueryDurationStart time.Time
@@ -76,7 +76,7 @@ func delete[T any](db *database.Database, entity T, id any, timed bool) (*TimedR
 		queryExecDurationStart = time.Now()
 	}
 
-	_, err = db.Db.Exec(q, id)
+	_, err = db.Exec(q, id)
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +95,7 @@ func delete[T any](db *database.Database, entity T, id any, timed bool) (*TimedR
 	return nil, err
 }
 
-func softDelete[T any](db *database.Database, entity T, id any, timed bool) (*TimedResult, error) {
+func softDelete[T any](db database.DbInstance, entity T, id any, timed bool) (*TimedResult, error) {
 	existingEntity, err := GetById(db, entity, id)
 	if err != nil {
 		return nil, err

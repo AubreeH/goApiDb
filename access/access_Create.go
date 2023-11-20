@@ -9,18 +9,18 @@ import (
 )
 
 // Create new records in the database. Returns the last inserted value.
-func Create[T any](db *database.Database, values ...T) (T, error) {
+func Create[T any](db database.DbInstance, values ...T) (T, error) {
 	out, _, err := create[T](db, values, false)
 	return out, err
 }
 
 // Create new records in the database. Returns the last inserted value.
-func CreateTimed[T any](db *database.Database, values ...T) (T, *TimedResult, error) {
+func CreateTimed[T any](db database.DbInstance, values ...T) (T, *TimedResult, error) {
 	out, timedResult, err := create[T](db, values, true)
 	return out, timedResult, err
 }
 
-func create[T any](db *database.Database, values []T, timed bool) (T, *TimedResult, error) {
+func create[T any](db database.DbInstance, values []T, timed bool) (T, *TimedResult, error) {
 	var overallDurationStart time.Time
 	var overallDurationEnd time.Time
 	var buildQueryDurationStart time.Time
@@ -78,7 +78,7 @@ func create[T any](db *database.Database, values []T, timed bool) (T, *TimedResu
 		queryExecDurationStart = time.Now()
 	}
 
-	result, err := db.Db.Exec(query, args...)
+	result, err := db.Exec(query, args...)
 	if err != nil {
 		return entity, nil, err
 	}

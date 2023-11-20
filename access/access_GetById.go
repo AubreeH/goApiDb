@@ -10,17 +10,17 @@ import (
 	"github.com/AubreeH/goApiDb/structParsing"
 )
 
-func GetById[T any](db *database.Database, entity T, id any) (T, error) {
+func GetById[T any](db database.DbInstance, entity T, id any) (T, error) {
 	out, _, err := getById[T](db, entity, id, false)
 	return out, err
 }
 
-func GetByIdTimed[T any](db *database.Database, entity T, id any) (T, *TimedResult, error) {
+func GetByIdTimed[T any](db database.DbInstance, entity T, id any) (T, *TimedResult, error) {
 	out, timedResult, err := getById[T](db, entity, id, true)
 	return out, timedResult, err
 }
 
-func getById[T any](db *database.Database, entity T, id any, timed bool) (T, *TimedResult, error) {
+func getById[T any](db database.DbInstance, entity T, id any, timed bool) (T, *TimedResult, error) {
 	var overallDurationStart time.Time
 	var overallDurationEnd time.Time
 	var buildQueryDurationStart time.Time
@@ -54,7 +54,7 @@ func getById[T any](db *database.Database, entity T, id any, timed bool) (T, *Ti
 		queryExecDurationStart = time.Now()
 	}
 
-	result, err := db.Db.Query(query, id)
+	result, err := db.Query(query, id)
 	if err != nil {
 		return output, nil, err
 	}
@@ -66,7 +66,7 @@ func getById[T any](db *database.Database, entity T, id any, timed bool) (T, *Ti
 		formatResultDurationStart = time.Now()
 	}
 
-	args, entityOutput, err := database.BuildRow(db, entity, result)
+	args, entityOutput, err := database.BuildRow(entity, result)
 	if err != nil {
 		return output, nil, err
 	}

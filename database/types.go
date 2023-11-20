@@ -42,9 +42,9 @@ func (diff TablDescDiff) Format() (tableQuery string, addConstraintQueries []str
 	for _, col := range diff.ColumnsToDrop {
 		colSql := col.Format(diff.Name, "drop")
 		if columns == "" {
-			columns += fmt.Sprintf("DROP %s", colSql)
+			columns += fmt.Sprintf("DROP `%s`", colSql)
 		} else {
-			columns += fmt.Sprintf(", DROP %s", colSql)
+			columns += fmt.Sprintf(", DROP `%s`", colSql)
 		}
 	}
 

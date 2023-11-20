@@ -8,17 +8,17 @@ import (
 	"github.com/AubreeH/goApiDb/structParsing"
 )
 
-func GetAll[T any](db *database.Database, entity T, limit int) ([]T, error) {
+func GetAll[T any](db database.DbInstance, entity T, limit int) ([]T, error) {
 	out, _, err := getAll[T](db, entity, limit, false)
 	return out, err
 }
 
-func GetAllTimed[T any](db *database.Database, entity T, limit int) ([]T, *TimedResult, error) {
+func GetAllTimed[T any](db database.DbInstance, entity T, limit int) ([]T, *TimedResult, error) {
 	out, timedResult, err := getAll[T](db, entity, limit, true)
 	return out, timedResult, err
 }
 
-func getAll[T any](db *database.Database, entity T, limit int, timed bool) ([]T, *TimedResult, error) {
+func getAll[T any](db database.DbInstance, entity T, limit int, timed bool) ([]T, *TimedResult, error) {
 	var overallDurationStart time.Time
 	var overallDurationEnd time.Time
 	var buildQueryDurationStart time.Time
@@ -56,7 +56,7 @@ func getAll[T any](db *database.Database, entity T, limit int, timed bool) ([]T,
 		queryExecDurationStart = time.Now()
 	}
 
-	result, err := db.Db.Query(query, args...)
+	result, err := db.Query(query, args...)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -69,7 +69,7 @@ func getAll[T any](db *database.Database, entity T, limit int, timed bool) ([]T,
 	}
 
 	var retValue []T
-	args, entityOutput, err := database.BuildRow(db, entity, result)
+	args, entityOutput, err := database.BuildRow(entity, result)
 	for result.Next() {
 		if err != nil {
 			return nil, nil, err

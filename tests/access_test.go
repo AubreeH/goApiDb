@@ -1,14 +1,16 @@
 package tests
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 
 	"github.com/AubreeH/goApiDb/access"
+	"github.com/AubreeH/goApiDb/database"
 	_ "github.com/go-sql-driver/mysql"
 )
 
-func Test_GetById_Success(t *testing.T) {
+func Test_GetById_WithDbObject_Success(t *testing.T) {
 	testEntity := setupGetById(t)
 
 	entity, err := access.GetById(db, testingEntity1{}, testEntity.Id)
@@ -22,7 +24,7 @@ func Test_GetById_Success(t *testing.T) {
 	)
 }
 
-func Test_GetById_InvalidId(t *testing.T) {
+func Test_GetById_WithDbObject_InvalidId(t *testing.T) {
 	setupGetById(t)
 
 	entity, err := access.GetById(db, testingEntity1{}, "abc")
@@ -37,7 +39,7 @@ func Test_GetById_InvalidId(t *testing.T) {
 	)
 }
 
-func Test_GetAll_Success(t *testing.T) {
+func Test_GetAll_WithDbObject_Success(t *testing.T) {
 	seededValues := setupGetAll(t)
 
 	results, err := access.GetAll(db, testingEntity1{}, 0)
@@ -63,7 +65,7 @@ func Test_GetAll_Success(t *testing.T) {
 	}
 }
 
-func Test_Delete_Success(t *testing.T) {
+func Test_Delete_WithDbObject_Success(t *testing.T) {
 	testEntity := setupGetById(t)
 
 	timedResult, err := access.DeleteTimed(db, testingEntity1{}, testEntity.Id)
@@ -83,9 +85,13 @@ func Test_Delete_Success(t *testing.T) {
 	)
 }
 
-func Test_Create_Success(t *testing.T) {
+func Test_Delete_WithTransactionObject_Success(t *testing.T) {
+	// TODO: Setup Delete test for transaction
+}
+
+func Test_Create_WithDbObject_Success(t *testing.T) {
 	InitDb(t)
-	setupTables(t, false, testingEntity3{})
+	setupTables(t, true, testingEntity3{})
 
 	testEntityName := randSeq(20)
 	testEntityDescription := randSeq(20)
@@ -120,4 +126,134 @@ func Test_Create_Success(t *testing.T) {
 		condition(e1.Name != testEntityName, "name does not match"),
 		condition(e1.Description != testEntityDescription, "description does not match"),
 	)
+}
+
+func Test_Create_WithTransactionObject(t *testing.T) {
+	InitDb(t)
+	setupTables(t, false, testingEntity2{}, testingEntity3{})
+
+	testEntity1Name := randSeq(20)
+	testEntity1Description := randSeq(20)
+	testEntity2Name := randSeq(20)
+	testEntity2Description := randSeq(20)
+
+	err := db.Transaction(func(tx *database.Transaction) error {
+		innerEntity1, err := access.Create(tx, testingEntity3{
+			Name:        testEntity1Name,
+			Description: testEntity1Description,
+		})
+		if err != nil {
+			return err
+		} else if innerEntity1.Id == 0 {
+			return fmt.Errorf("e1 id is not set")
+		}
+
+		innerEntity2, err := access.Create(tx, testingEntity2{
+			Name:          testEntity2Name,
+			Description:   testEntity2Description,
+			TestEntity3Id: &innerEntity1.Id,
+		})
+		if err != nil {
+			return err
+		} else if innerEntity2.Id == 0 {
+			return fmt.Errorf("e2 id is not set")
+		}
+
+		return nil
+	})
+	assertError(t, err)
+
+	outerEntity1 := testingEntity3{}
+	rows, err := db.Db.Query("SELECT id, name, description FROM test_entity_3 WHERE name = ?", testEntity1Name)
+	assertError(t, err)
+	if !rows.Next() {
+		assertError(t, fmt.Errorf("no rows returned when querying for first test entity"))
+	}
+
+	err = rows.Scan(&outerEntity1.Id, &outerEntity1.Name, &outerEntity1.Description)
+	assertError(t, err)
+
+	outerEntity2 := testingEntity2{}
+	rows, err = db.Db.Query("SELECT id, name, description, test_entity3_id FROM test_entity_2 WHERE name = ?", testEntity2Name)
+	assertError(t, err)
+	if !rows.Next() {
+		assertError(t, fmt.Errorf("no rows returned when querying for second test entity"))
+	}
+
+	err = rows.Scan(&outerEntity2.Id, &outerEntity2.Name, &outerEntity2.Description, &outerEntity2.TestEntity3Id)
+	assertError(t, err)
+
+	assert(t,
+		condition(outerEntity1.Id == 0, "first entity id is not set"),
+		condition(outerEntity1.Name == "", "first entity name is not set"),
+		condition(outerEntity1.Description == "", "first entity description is not set"),
+		condition(outerEntity1.Name != testEntity1Name, "first entity name does not match"),
+		condition(outerEntity1.Description != testEntity1Description, "first entity description does not match"),
+		condition(outerEntity2.Id == 0, "second entity id is not set"),
+		condition(outerEntity2.Name == "", "second entity name is not set"),
+		condition(outerEntity2.Description == "", "second entity description is not set"),
+		condition(outerEntity2.Name != testEntity2Name, "second entity name does not match"),
+		condition(outerEntity2.Description != testEntity2Description, "second entity description does not match"),
+		condition(outerEntity1.Id != *outerEntity2.TestEntity3Id, "first entity and second entity ids do not match"),
+	)
+
+	testEntity3Name := randSeq(20)
+	testEntity3Description := randSeq(20)
+	testEntity4Name := randSeq(20)
+	testEntity4Description := randSeq(20)
+
+	err = db.Transaction(func(tx *database.Transaction) error {
+		innerEntity3, err := access.Create(tx, testingEntity3{
+			Name:        testEntity3Name,
+			Description: testEntity3Description,
+		})
+		if err != nil {
+			return err
+		} else if innerEntity3.Id == 0 {
+			return fmt.Errorf("e2 id is not set")
+		}
+
+		innerEntity4, err := access.Create(tx, testingEntity2{
+			Name:          testEntity4Name,
+			Description:   testEntity4Description,
+			TestEntity3Id: &innerEntity3.Id,
+		})
+		if err != nil {
+			return err
+		} else if innerEntity4.Id == 0 {
+			return fmt.Errorf("e2 id is not set")
+		}
+
+		return errors.New("rollback")
+	})
+	if err != nil && err.Error() != "rollback" {
+		assertError(t, err)
+	}
+
+	outerEntity3 := testingEntity3{}
+	rows, err = db.Db.Query("SELECT id, name, description FROM test_entity_3 WHERE name = ?", testEntity3Name)
+	assertError(t, err)
+	for rows.Next() {
+		err := rows.Scan(&outerEntity3.Id, &outerEntity3.Name, &outerEntity3.Description)
+		assertError(t, err)
+	}
+
+	outerEntity4 := testingEntity2{}
+	rows, err = db.Db.Query("SELECT id, name, description, test_entity3_id FROM test_entity_2 WHERE name = ?", testEntity4Name)
+	assertError(t, err)
+	for rows.Next() {
+		err := rows.Scan(&outerEntity4.Id, &outerEntity4.Name, &outerEntity4.Description, &outerEntity4.TestEntity3Id)
+		assertError(t, err)
+	}
+
+	assert(t,
+		condition(outerEntity3.Id != 0, "e3 id is set"),
+		condition(outerEntity3.Name != "", "e3 name is set"),
+		condition(outerEntity3.Description != "", "e3 description is set"),
+		condition(outerEntity4.Id != 0, "e4 id is set"),
+		condition(outerEntity4.Name != "", "e4 name is set"),
+		condition(outerEntity4.Description != "", "e4 description is set"),
+		condition(outerEntity4.TestEntity3Id != nil, "e4 test entity 3 id is set"),
+	)
+
 }

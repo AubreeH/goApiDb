@@ -7,16 +7,16 @@ import (
 	"github.com/AubreeH/goApiDb/structParsing"
 )
 
-func Update[T any](db *database.Database, value T, id any) error {
+func Update[T any](db database.DbInstance, value T, id any) error {
 	_, err := update(db, value, id, updateOperationHandler, false)
 	return err
 }
 
-func UpdateTimed[T any](db *database.Database, value T, id any) (*TimedResult, error) {
+func UpdateTimed[T any](db database.DbInstance, value T, id any) (*TimedResult, error) {
 	return update[T](db, value, id, updateOperationHandler, true)
 }
 
-func update[T any](db *database.Database, value T, id any, operationHandler OperationHandler, timed bool) (*TimedResult, error) {
+func update[T any](db database.DbInstance, value T, id any, operationHandler OperationHandler, timed bool) (*TimedResult, error) {
 	var overallDurationStart time.Time
 	var overallDurationEnd time.Time
 	var buildQueryDurationStart time.Time
@@ -81,7 +81,7 @@ func update[T any](db *database.Database, value T, id any, operationHandler Oper
 		queryExecDurationStart = time.Now()
 	}
 
-	_, err = db.Db.Exec(q+where, args...)
+	_, err = db.Exec(q+where, args...)
 	if err != nil {
 		return nil, err
 	}
