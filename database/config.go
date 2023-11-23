@@ -1,5 +1,7 @@
 package database
 
+import "github.com/AubreeH/goApiDb/driver"
+
 // Config - Used to provide connection details to [SetupDatabase] function
 type Config struct {
 	// Hostname - Specifies the hostname for connecting to the database.
@@ -13,5 +15,9 @@ type Config struct {
 	// Password - Specifies the password to use when connecting to the database.
 	Password string
 	// Driver - Specifies the driver to use when connecting to the database.
-	Driver DriverType
+	Driver driver.DriverType
+}
+
+func (c *Config) GetConnectionString() string {
+	return c.Driver.GetConnectionString(c.Username, c.Password, c.Port, c.Hostname, c.Database)
 }

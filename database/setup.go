@@ -1,6 +1,10 @@
 package database
 
-import "database/sql"
+import (
+	"database/sql"
+
+	"github.com/AubreeH/goApiDb/driver"
+)
 
 // SetupDatabase - Initial setup function for goApiDb connection.
 //
@@ -8,7 +12,7 @@ import "database/sql"
 //
 // Returns [Database] connection.
 func SetupDatabase(config Config) (*Database, error) {
-	db, err := sql.Open(string(config.Driver), getConnectionString(config))
+	db, err := sql.Open(string(config.Driver), config.GetConnectionString())
 
 	if err != nil {
 		return nil, err
@@ -19,7 +23,7 @@ func SetupDatabase(config Config) (*Database, error) {
 		return nil, err
 	}
 
-	output := &Database{Db: db, dbName: config.Database, tableColumns: make(map[string][]string)}
+	output := &Database{Db: db, dbName: config.Database, tableColumns: make(map[string][]string), config: config}
 
 	setupTableVariables(output)
 
@@ -30,4 +34,12 @@ func setupTableVariables(database *Database) {
 	if database.tableColumns == nil {
 		database.tableColumns = make(map[string][]string)
 	}
+}
+
+func (d *Database) DescribeTable(tableName string) (*driver.TableDescription, error) {
+	return d.config.Driver.DescribeTable(d.Db, tableName)
+}
+
+func (d *Database) GetKey(tableName, columnName string) (*driver.Key, error) {
+	return d.config.Driver.GetKey(d.Db, tableName, columnName)
 }

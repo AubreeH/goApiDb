@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/AubreeH/goApiDb/database"
+	"github.com/AubreeH/goApiDb/driver"
 	"github.com/AubreeH/goApiDb/structParsing"
 	"github.com/joho/godotenv"
 )
@@ -56,7 +57,7 @@ func getDatabaseConfig() database.Config {
 		Username: os.Getenv("DB_USER"),
 		Password: os.Getenv("DB_PASS"),
 		Database: os.Getenv("DB_NAME"),
-		Driver:   database.DriverType(os.Getenv("DB_DRIVER")),
+		Driver:   driver.DriverType(os.Getenv("DB_DRIVER")),
 	}
 }
 

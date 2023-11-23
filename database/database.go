@@ -23,4 +23,5 @@ type Database struct {
 	Db           *sql.DB
 	dbName       string
 	tableColumns map[string][]string
+	config       Config
 }
