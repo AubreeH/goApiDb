@@ -80,7 +80,7 @@ func getPrimaryKey(entityValue reflect.Value, baseType reflect.Type) string {
 		field := entityType.Field(i)
 		fieldValue := entityValue.Field(i)
 
-		if FormatKey(field.Tag.Get(SqlKey)) == "PRIMARY KEY" {
+		if FormatKey(DbKey.Get(field)) == "PRIMARY KEY" {
 			return FormatSqlName(field)
 		} else if fieldValue.Kind() == reflect.Struct && FormatParseStruct(field) {
 			pk := getPrimaryKey(fieldValue, baseType)

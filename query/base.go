@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+
+	"github.com/AubreeH/goApiDb/structParsing"
 )
 
-type query[T any] struct {
+type Query[T any] struct {
 	operation operation
 	distinct  bool
 	where     Where
@@ -16,6 +18,8 @@ type query[T any] struct {
 	orderBy   orderBy
 	limit     limit
 	params    params
+
+	QuerySettings
 }
 
 type QueryResult[T any] struct {
@@ -24,28 +28,32 @@ type QueryResult[T any] struct {
 	Paginated  bool
 	Page       uint
 	TotalPages uint
-	Query      *query[T]
+	Query      *Query[T]
 }
 
-func Select[T any](s T) *query[T] {
-	return &query[T]{
+func Select[T any](s T) *Query[T] {
+	return &Query[T]{
 		operation: selectOperation,
 	}
 }
 
-func SelectDistinct[T any](s T) *query[T] {
-	return &query[T]{
+func SelectDistinct[T any](s T) *Query[T] {
+	return &Query[T]{
 		operation: selectOperation,
 		distinct:  true,
 	}
 }
 
-func (q *query[T]) format(pretty bool) string {
-
+func (q *Query[T]) format(pretty bool) (string, error) {
 	var out []string
-	if selectStatement := q.formatSelect(pretty); selectStatement != "" {
+	if selectStatement, err := q.formatSelect(pretty); err != nil {
+		return "", err
+	} else if selectStatement == "" {
+		return "", fmt.Errorf("no select statement found")
+	} else {
 		out = append(out, selectStatement)
 	}
+
 	if fromStatement := q.from.format(pretty); fromStatement != "" {
 		out = append(out, fromStatement)
 	}
@@ -66,21 +74,22 @@ func (q *query[T]) format(pretty bool) string {
 	}
 
 	if pretty {
-		return strings.Join(out, "\n")
+		return strings.Join(out, "\n"), nil
 	} else {
-		return strings.Join(out, " ")
+		return strings.Join(out, " "), nil
 	}
 }
 
-func (q *query[T]) formatSelect(pretty bool) string {
+func (q *Query[T]) formatSelect(pretty bool) (string, error) {
 	var t T
 	refType := reflect.TypeOf(t)
 
-	var columns []string
-	for i := 0; i < refType.NumField(); i++ {
-		field := refType.Field(i)
-		columns = append(columns, field.Tag.Get("s")+" as "+field.Name)
+	columns, err := q.parseSelectColumns(refType)
+	if err != nil {
+		fmt.Println("ERROR", err)
+		return "", err
 	}
+	fmt.Println("COLUMNS", columns)
 
 	var formattedColumns string
 	if pretty {
@@ -90,13 +99,51 @@ func (q *query[T]) formatSelect(pretty bool) string {
 	}
 
 	if q.distinct {
-		return fmt.Sprintf("SELECT DISTINCT %s", formattedColumns)
+		return fmt.Sprintf("SELECT DISTINCT %s", formattedColumns), nil
 	} else {
-		return fmt.Sprintf("SELECT %s", formattedColumns)
+		return fmt.Sprintf("SELECT %s", formattedColumns), nil
 	}
 }
 
-func (q *query[T]) formatWhere(pretty bool) string {
+func (q *Query[T]) parseSelectColumns(refType reflect.Type) ([]string, error) {
+	if refType.Kind() != reflect.Struct {
+		return nil, fmt.Errorf("provided type in query is not a struct")
+	}
+
+	var columns []string
+
+	for i := 0; i < refType.NumField(); i++ {
+		field := refType.Field(i)
+
+		if structParsing.FormatSqlIgnore(field) {
+			continue
+		}
+
+		if val, ok := structParsing.QueryIgnore.Lookup(field); ok && structParsing.FormatBoolean(val) == 1 {
+			continue
+		}
+
+		if field.Type.Kind() == reflect.Struct && structParsing.FormatParseStruct(field) {
+			newColumns, err := q.parseSelectColumns(field.Type)
+			if err != nil {
+				return nil, err
+			}
+
+			columns = append(columns, newColumns...)
+		} else if val, ok := structParsing.QuerySelect.Lookup(field); !ok || val == "" {
+			if q.preventFieldNameAutoMapping {
+				continue
+			}
+			columns = append(columns, q.from.alias+"."+structParsing.FormatSqlName(field))
+		} else {
+			columns = append(columns, val+" as "+field.Name)
+		}
+	}
+
+	return columns, nil
+}
+
+func (q *Query[T]) formatWhere(pretty bool) string {
 	val := q.where.format(pretty)
 	if val == "" {
 		return ""

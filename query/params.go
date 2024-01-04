@@ -20,7 +20,7 @@ func (p params) parse(q string) (string, []any) {
 	return paramRegex.ReplaceAllString(q, "?"), out
 }
 
-func (q *query[T]) SetParam(key string, value any) *query[T] {
+func (q *Query[T]) SetParam(key string, value any) *Query[T] {
 	if q.params == nil {
 		q.params = make(params)
 	}

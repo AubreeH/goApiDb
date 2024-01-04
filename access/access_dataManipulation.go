@@ -2,8 +2,9 @@ package access
 
 import (
 	"errors"
-	"github.com/AubreeH/goApiDb/structParsing"
 	"reflect"
+
+	"github.com/AubreeH/goApiDb/structParsing"
 )
 
 func GetDataAndId(value any, operationHandler OperationHandler) (ColumnData, []ColumnData, error) {
@@ -75,7 +76,7 @@ func extractData(refValue reflect.Value, operationHandler OperationHandler) ([]C
 		}
 
 		sqlName := structParsing.FormatSqlName(fieldType)
-		nullable := structParsing.FormatBoolean(fieldType.Tag.Get(structParsing.SqlNullable)) == 1
+		nullable := structParsing.FormatBoolean(structParsing.DbNullable.Get(fieldType)) == 1
 		primaryKey := structParsing.FormatSqlKey(fieldType) == "PRIMARY KEY"
 		hasDefault := structParsing.FormatSqlDefault(fieldType) != ""
 

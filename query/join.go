@@ -33,17 +33,17 @@ func (j joins) join(joinType joinType, entity interface{}, alias, on string) joi
 	})
 }
 
-func (q query[T]) LeftJoin(entity interface{}, alias, on string) *query[T] {
+func (q Query[T]) LeftJoin(entity interface{}, alias, on string) *Query[T] {
 	q.joins = q.joins.join(leftJoin, entity, alias, on)
 	return &q
 }
 
-func (q query[T]) RightJoin(entity interface{}, alias, on string) *query[T] {
+func (q Query[T]) RightJoin(entity interface{}, alias, on string) *Query[T] {
 	q.joins = q.joins.join(rightJoin, entity, alias, on)
 	return &q
 }
 
-func (q query[T]) InnerJoin(entity interface{}, alias, on string) *query[T] {
+func (q Query[T]) InnerJoin(entity interface{}, alias, on string) *Query[T] {
 	q.joins = q.joins.join(innerJoin, entity, alias, on)
 	return &q
 }

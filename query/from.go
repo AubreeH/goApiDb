@@ -11,7 +11,7 @@ type from struct {
 	alias  string
 }
 
-func (q query[T]) From(entity interface{}, alias string) *query[T] {
+func (q Query[T]) From(entity interface{}, alias string) *Query[T] {
 	q.from = from{
 		entity: entity,
 		alias:  alias,

@@ -55,29 +55,23 @@ func parseColumns(tableDescription *TablDesc, refValue reflect.Value) {
 	}
 }
 
-func parseColumn(structField reflect.StructField, fieldValue reflect.Value) ColDesc {
-	desc := ColDesc{}
-	desc.Type = FormatSqlType(structField)
-	desc.Key = GetTag(structField, SqlKey)
-	desc.Extras = FormatSqlExtras(structField)
-	desc.Nullable = FormatSqlNullable(structField)
-	desc.Default = FormatSqlDefault(structField)
-
-	if GetTag(structField, SqlDisallowExternalModification) == "" && FormatKey(desc.Key) == "PRIMARY KEY" {
-		desc.DisallowExternalModification = true
-	} else {
-		desc.DisallowExternalModification = FormatSqlDisallowExternalModification(structField)
+func parseColumn(field reflect.StructField, fieldValue reflect.Value) ColDesc {
+	return ColDesc{
+		Type:                         FormatSqlType(field),
+		Key:                          DbKey.Get(field),
+		Extras:                       FormatSqlExtras(field),
+		Nullable:                     FormatSqlNullable(field),
+		Default:                      FormatSqlDefault(field),
+		DisallowExternalModification: FormatSqlDisallowExternalModification(field),
+		Name:                         FormatSqlName(field),
+		Pointer:                      getPtr(field, fieldValue),
+		Value:                        fieldValue.Interface(),
 	}
+}
 
-	var name string
-	helpers.TagLookup(structField, SqlName, &name)
-	desc.Name = FormatName(name, structField.Name)
-
+func getPtr(field reflect.StructField, fieldValue reflect.Value) interface{} {
 	if fieldValue.CanAddr() {
-		desc.Pointer = fieldValue.Addr().Interface()
+		return fieldValue.Addr().Interface()
 	}
-
-	desc.Value = fieldValue.Interface()
-
-	return desc
+	return nil
 }

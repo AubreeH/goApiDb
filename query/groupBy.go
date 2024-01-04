@@ -6,7 +6,7 @@ type groupBy struct {
 	columns []string
 }
 
-func (q *query[T]) GroupBy(columns ...string) *query[T] {
+func (q *Query[T]) GroupBy(columns ...string) *Query[T] {
 	q.groupBy.columns = columns
 	return q
 }

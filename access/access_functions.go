@@ -30,11 +30,11 @@ func mergeRefValues(base reflect.Value, merger reflect.Value) reflect.Value {
 		baseFieldType := base.Type().Field(i)
 		mergerField := merger.Field(i)
 
-		blockExternalMod := structParsing.FormatBoolean(baseFieldType.Tag.Get(structParsing.SqlDisallowExternalModification))
+		blockExternalMod := structParsing.FormatBoolean(structParsing.DbDisallowExternalModification.Get(baseFieldType))
 		if blockExternalMod == 1 {
 			continue
 		} else {
-			parseStruct := structParsing.FormatBoolean(baseFieldType.Tag.Get(structParsing.ParseStruct))
+			parseStruct := structParsing.FormatBoolean(structParsing.DbParseStruct.Get(baseFieldType))
 			if baseField.Kind() == reflect.Struct && (parseStruct != 0) {
 				baseField.Set(mergeRefValues(baseField, mergerField))
 			} else {
@@ -53,7 +53,7 @@ func doesEntitySoftDelete(entity any) bool {
 			fieldValue := refValue.Field(i)
 			fieldType := refValue.Type().Field(i)
 
-			if structParsing.FormatBoolean(fieldType.Tag.Get(structParsing.SoftDeletes)) == 1 {
+			if structParsing.FormatBoolean(structParsing.DbSoftDeletes.Get(fieldType)) == 1 {
 				return true
 			}
 			if fieldValue.Type().Kind() == reflect.Struct && structParsing.FormatParseStruct(fieldType) {

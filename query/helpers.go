@@ -2,9 +2,11 @@ package query
 
 import (
 	"database/sql"
+	"fmt"
 	"reflect"
 
 	"github.com/AubreeH/goApiDb/helpers"
+	"github.com/AubreeH/goApiDb/structParsing"
 )
 
 func resetStruct[T any](r *T) {
@@ -34,22 +36,48 @@ func getPointers[T any](s *T) map[string]interface{} {
 	out := make(map[string]interface{})
 
 	refVal := helpers.GetRootValue(reflect.ValueOf(s))
+	getPointersFromRefValue(refVal, out)
 
+	return out
+}
+
+func getPointersFromRefValue(refVal reflect.Value, out map[string]interface{}) {
 	for i := 0; i < refVal.NumField(); i++ {
 		field := refVal.Type().Field(i)
-		if field.Anonymous {
-			continue
-		}
+		valueField := refVal.Field(i)
 
 		colName := field.Name
 		if colName == "" {
 			continue
 		}
 
-		out[colName] = refVal.Field(i).Addr().Interface()
+		sqlName := structParsing.FormatSqlName(field)
+
+		getPtrFunc := valueField.MethodByName("GetPtrFunc")
+		if getPtrFunc.IsValid() {
+			fmt.Println(field.Name, "has a GetPtrFunc")
+
+			result := getPtrFunc.Call([]reflect.Value{valueField.Addr()})[0]
+			if result.Elem().Kind() == reflect.Map {
+				val := result.Elem().Interface().(map[string]any)
+				for s, p := range val {
+					out[s] = p
+				}
+			} else if result.Kind() == reflect.Pointer {
+				out[sqlName] = result.Interface()
+			} else if result.Kind() != reflect.Invalid {
+				out[sqlName] = result.Addr().Interface()
+			}
+		} else if valueField.Kind() == reflect.Struct && structParsing.FormatParseStruct(field) {
+			fmt.Println(field.Name, "is a struct")
+			getPointersFromRefValue(valueField, out)
+		} else {
+			fmt.Println(field.Name, "is a field")
+			out[sqlName] = valueField.Addr().Interface()
+		}
 	}
 
-	return out
+	fmt.Println("OUT", out)
 }
 
 func scanRows[TScanType any](rs *sql.Rows) ([]TScanType, error) {

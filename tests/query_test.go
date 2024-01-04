@@ -7,7 +7,7 @@ import (
 	"github.com/AubreeH/goApiDb/query"
 )
 
-func Test_QueryBuilder_Success(t *testing.T) {
+func Test_QueryBuilder_WithQueryResultStruct_Success(t *testing.T) {
 	testEntity3DataValues, testEntity2DataValues, testEntity1DataValues := setupQueryBuilder(t, 10000)
 
 	q := query.Select(struct {
@@ -25,7 +25,7 @@ func Test_QueryBuilder_Success(t *testing.T) {
 		)
 
 	results, err := q.All(db)
-	assertError(t, err)
+	assert(t, e(err))
 
 	for _, v := range results {
 
@@ -43,6 +43,48 @@ func Test_QueryBuilder_Success(t *testing.T) {
 			condition(te1DataValue["name"] != v.Te1name, "te1.name does not match"),
 			condition(te2DataValue["name"] != v.Te2name, "te2.name does not match"),
 			condition(te3DataValue["name"] != v.Te3name, "te3.name does not match"),
+		)
+	}
+}
+
+func Test_QueryBuilder_WithBaseStruct_Success(t *testing.T) {
+	_, _, testEntity1DataValues := setupQueryBuilder(t, 10000)
+
+	q := query.Select(testingEntity1{}).
+		From(testingEntity1{}, "te1").
+		LeftJoin(testingEntity2{}, "te2", "te1.test_entity2_id = te2.id").
+		LeftJoin(testingEntity3{}, "te3", "te2.test_entity3_id = te3.id").
+		Where(
+			"te2.name IS NOT NULL",
+			"te3.name IS NOT NULL",
+		)
+
+	results, err := q.All(db)
+	assert(t, e(err))
+
+	for _, v := range results {
+
+		assert(t,
+			condition(v.Name == "", "te1.name is empty"),
+			condition(v.Description == "", "te1.description is empty"),
+			condition(v.TestEntity2Id == nil, "te1.test_entity2_id is empty"),
+		)
+
+		te1DataValue := testEntity1DataValues[v.Id]
+
+		fmt.Println("base   name", v.Name)
+		fmt.Println("map    name", te1DataValue["name"])
+
+		fmt.Println("base   description", v.Description)
+		fmt.Println("map    description", te1DataValue["description"])
+
+		fmt.Println("base   test_entity2_id", *v.TestEntity2Id)
+		fmt.Println("map    test_entity2_id", te1DataValue["test_entity2_id"])
+
+		assert(t,
+			condition(te1DataValue["name"] != v.Name, "te1.name does not match"),
+			condition(te1DataValue["description"] != v.Description, "te1.description does not match"),
+			condition(te1DataValue["test_entity2_id"] != int(*v.TestEntity2Id), "te1.test_entity2_id does not match", te1DataValue["test_entity2_id"], *v.TestEntity2Id),
 		)
 	}
 }

@@ -7,12 +7,12 @@ type limit struct {
 	offset uint
 }
 
-func (q *query[T]) Limit(limit uint) *query[T] {
+func (q *Query[T]) Limit(limit uint) *Query[T] {
 	q.limit.limit = limit
 	return q
 }
 
-func (q *query[T]) Offset(offset uint) *query[T] {
+func (q *Query[T]) Offset(offset uint) *Query[T] {
 	q.limit.offset = offset
 	return q
 }

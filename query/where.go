@@ -17,12 +17,12 @@ type Where struct {
 
 type WhereOperation func(w *Where, state func(statements ...string))
 
-func (q *query[T]) WhereBuilder(function func(w *Where)) *query[T] {
+func (q *Query[T]) WhereBuilder(function func(w *Where)) *Query[T] {
 	function(&q.where)
 	return q
 }
 
-func (q *query[T]) Where(statements ...string) *query[T] {
+func (q *Query[T]) Where(statements ...string) *Query[T] {
 	q.where.clauseType = andClause
 	q.where.statements = append(q.where.statements, statements...)
 	return q

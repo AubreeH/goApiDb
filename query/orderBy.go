@@ -6,7 +6,7 @@ type orderBy struct {
 	columns []string
 }
 
-func (q *query[T]) OrderBy(columns ...string) *query[T] {
+func (q *Query[T]) OrderBy(columns ...string) *Query[T] {
 	q.orderBy.columns = columns
 	return q
 }
