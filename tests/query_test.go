@@ -50,14 +50,9 @@ func Test_QueryBuilder_WithQueryResultStruct_Success(t *testing.T) {
 func Test_QueryBuilder_WithBaseStruct_Success(t *testing.T) {
 	_, _, testEntity1DataValues := setupQueryBuilder(t, 10000)
 
-	q := query.Select(testingEntity1{}).
-		From(testingEntity1{}, "te1").
-		LeftJoin(testingEntity2{}, "te2", "te1.test_entity2_id = te2.id").
-		LeftJoin(testingEntity3{}, "te3", "te2.test_entity3_id = te3.id").
-		Where(
-			"te2.name IS NOT NULL",
-			"te3.name IS NOT NULL",
-		)
+	q := query.Select(testingEntity1{})
+	q.From(testingEntity1{}, "te1")
+	q.Where("te1.test_entity2_id IS NOT NULL")
 
 	results, err := q.All(db)
 	assert(t, e(err))

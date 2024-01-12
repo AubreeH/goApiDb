@@ -11,12 +11,12 @@ type from struct {
 	alias  string
 }
 
-func (q Query[T]) From(entity interface{}, alias string) *Query[T] {
+func (q *Query[T]) From(entity interface{}, alias string) *Query[T] {
 	q.from = from{
 		entity: entity,
 		alias:  alias,
 	}
-	return &q
+	return q
 }
 
 func (f from) format(pretty bool) string {
