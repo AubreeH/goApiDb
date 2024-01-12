@@ -67,15 +67,6 @@ func Test_QueryBuilder_WithBaseStruct_Success(t *testing.T) {
 
 		te1DataValue := testEntity1DataValues[v.Id]
 
-		fmt.Println("base   name", v.Name)
-		fmt.Println("map    name", te1DataValue["name"])
-
-		fmt.Println("base   description", v.Description)
-		fmt.Println("map    description", te1DataValue["description"])
-
-		fmt.Println("base   test_entity2_id", *v.TestEntity2Id)
-		fmt.Println("map    test_entity2_id", te1DataValue["test_entity2_id"])
-
 		assert(t,
 			condition(te1DataValue["name"] != v.Name, "te1.name does not match"),
 			condition(te1DataValue["description"] != v.Description, "te1.description does not match"),

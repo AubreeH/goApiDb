@@ -86,10 +86,8 @@ func (q *Query[T]) formatSelect(pretty bool) (string, error) {
 
 	columns, err := q.parseSelectColumns(refType)
 	if err != nil {
-		fmt.Println("ERROR", err)
 		return "", err
 	}
-	fmt.Println("COLUMNS", columns)
 
 	var formattedColumns string
 	if pretty {

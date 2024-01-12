@@ -2,7 +2,6 @@ package query
 
 import (
 	"database/sql"
-	"fmt"
 
 	"github.com/AubreeH/goApiDb/database"
 )
@@ -69,8 +68,6 @@ func (q *Query[T]) execQuery(db *database.Database) (*sql.Rows, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Println(queryStr)
 
 	parsedQuery, queryArgs := q.params.parse(queryStr)
 	return db.Db.Query(parsedQuery, queryArgs...)
